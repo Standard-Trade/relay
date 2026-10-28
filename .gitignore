@@ -1,0 +1,9 @@
+target/
+build/
+node_modules/
+.wrangler/
+__pycache__/
+*.pyc
+.env
+.dev.vars
+slides/example/*.jpg

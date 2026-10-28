@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-variant="c">
+<head>
+<meta charset="utf-8"><meta name="msvalidate.01" content="C0F0DE98892B2AD284896C97B0894061"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standard Grow</title>
+<meta name="description" content="Standard Grow, by Standard Trade, is a number you text a reel to. It sends back ads and a budget for your business, runs them once you approve, and reports what they brought in.">
+<link rel="canonical" href="https://grow.standardtrade.ai/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Standard Grow">
+<meta property="og:url" content="https://grow.standardtrade.ai/">
+<meta property="og:title" content="Standard Grow, by Standard Trade">
+<meta property="og:description" content="Standard Grow, by Standard Trade, is a number you text a reel to. It sends back ads and a budget for your business, runs them once you approve, and reports what they brought in.">
+<meta property="og:image" content="https://grow.standardtrade.ai/logo-1024.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://standardtrade.ai/#org","name":"Standard Trade","url":"https://standardtrade.ai","email":"info@standardtrade.ai"},{"@type":"SoftwareApplication","@id":"https://grow.standardtrade.ai/#app","name":"Standard Grow","url":"https://grow.standardtrade.ai/","description":"Standard Grow, by Standard Trade, is a number you text a reel to. It sends back ads and a budget for your business, runs them once you approve, and reports what they brought in.","applicationCategory":"BusinessApplication","operatingSystem":"iOS, Android (via iMessage or WhatsApp)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","description":"Your first growth test is free."},"publisher":{"@id":"https://standardtrade.ai/#org"}},{"@type":"FAQPage","@id":"https://grow.standardtrade.ai/#faq","mainEntity":[{"@type":"Question","name":"What is Standard Grow?","acceptedAnswer":{"@type":"Answer","text":"Standard Grow, by Standard Trade, is a number you text a reel to. It sends back ads and a budget for your business, runs them once you approve, and reports what they brought in."}},{"@type":"Question","name":"Can I turn an Instagram reel or TikTok into an ad for my store?","acceptedAnswer":{"@type":"Answer","text":"Yes. Text us the link. We break down why it works (hook, format, offer), rebuild it for your business, and send back the ads and a budget to test."}},{"@type":"Question","name":"How is this different from AI ad generators?","acceptedAnswer":{"@type":"Answer","text":"Most tools stop at the video. Standard Grow plans the whole experiment: what to test, how much to spend, what counts as a win. It runs only after you approve, and you get the result back."}},{"@type":"Question","name":"Do I need an app or a marketing team?","acceptedAnswer":{"@type":"Answer","text":"No. It runs from your phone over text. You decide what runs."}},{"@type":"Question","name":"What does it cost?","acceptedAnswer":{"@type":"Answer","text":"Your first growth test is free."}},{"@type":"Question","name":"Who is it for?","acceptedAnswer":{"@type":"Answer","text":"People starting internet-native businesses: online stores, apps and creators selling a product."}}]}]}</script>
+<link rel="icon" href="/logo-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  /* V5 — A note from the founder. Quiet, white, one column, reads like a letter. */
+  @font-face { font-family: "General Sans"; src: url("/fonts/GeneralSans-Variable.woff2") format("woff2"); font-weight: 200 700; font-display: swap; }
+  :root { --bg: #ffffff; --ink: #141414; --muted: #6b6b6b; --line: #e6e6e3; --green: #0F3D2E; }
+  * { box-sizing: border-box; }
+  ::selection { background: #C8F169; color: var(--green); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 19px/1.6 "Source Serif 4", Georgia, serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 600px; margin: 0 auto; padding: 56px 24px 72px; }
+  .mark { width: 40px; height: 40px; border-radius: 10px; display: block; margin-bottom: 40px; }
+  h1 { font-weight: 600; font-size: clamp(32px, 5vw, 44px); line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 24px; text-wrap: balance; }
+  p { margin: 0 0 18px; }
+  .sig { font-family: "General Sans", system-ui, sans-serif; font-size: 15px; color: var(--muted); margin: 26px 0 36px; }
+  form { font-family: "General Sans", system-ui, sans-serif; display: flex; gap: 8px; }
+  input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: #fff; outline: 0; }
+  input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(15,61,46,.12); }
+  button { font: inherit; font-weight: 600; font-size: 16px; padding: 13px 18px; border: 0; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; white-space: nowrap; transition: background .2s ease-out; }
+  button:hover { background: #145240; } button:disabled { opacity: .6; }
+  button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+  .err { font-family: "General Sans", system-ui, sans-serif; color: #b3261e; font-size: 14px; min-height: 20px; margin: 8px 0 0; }
+  .ok { font-style: italic; }
+  .fine { font-family: "General Sans", system-ui, sans-serif; color: var(--muted); font-size: 13px; margin-top: 40px; }
+  .fine a { color: inherit; }
+  .hp { position: absolute; left: -9999px; }
+  @media (max-width: 560px) { form { flex-direction: column; } }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111; --ink: #ededed; --muted: #a0a0a0; --line: #2c2c2c; } input { background: #1a1a1a; } }
+  .faq { margin-top: 56px; border-top: 1px solid var(--line); padding-top: 28px; }
+  .faq h2 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .faq-i { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .faq h3 { font-family: "General Sans", system-ui, sans-serif; font-size: 16px; font-weight: 600; margin: 0 0 2px; }
+  .faq p { margin: 0; font-size: 17px; }
+</style>
+<link rel="stylesheet" href="/v/send.css?v=10">
+</head>
+<body>
+<main class="wrap" data-form-scope>
+  <img class="mark" src="/logo-180.png" alt="Standard Grow">
+  <h1>Send a reel tonight. Wake up to a test ready to run.</h1>
+  <p>Saving a reel takes one tap. Turning it into an ad for your store takes an afternoon, which is why most saved reels never get tested.</p>
+  <p>Standard Grow is a number you text. Send the reel and we send back the ads and a budget, sized to your business. It runs once you approve, and you hear what it brought in. Growth at the pace of inspiration.</p>
+  <p class="sig">Andy, building Standard Grow</p>
+  <form data-variant="c" novalidate>
+    <input type="email" name="email" placeholder="Your email" autocomplete="email" aria-label="Email" required>
+    <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <button>Send my first reel</button>
+  </form>
+  <p class="ok" hidden>Thank you. I'll email you to set up your first growth test.</p>
+  <p class="err" role="alert"></p>
+  <section class="faq" id="faq" aria-labelledby="faq-t">
+    <h2 id="faq-t">Questions</h2>
+    <div class="faq-i"><h3>What is Standard Grow?</h3><p>Standard Grow, by Standard Trade, is a number you text a reel to. It sends back ads and a budget for your business, runs them once you approve, and reports what they brought in.</p></div>
+    <div class="faq-i"><h3>Can I turn an Instagram reel or TikTok into an ad for my store?</h3><p>Yes. Text us the link. We break down why it works (hook, format, offer), rebuild it for your business, and send back the ads and a budget to test.</p></div>
+    <div class="faq-i"><h3>How is this different from AI ad generators?</h3><p>Most tools stop at the video. Standard Grow plans the whole experiment: what to test, how much to spend, what counts as a win. It runs only after you approve, and you get the result back.</p></div>
+    <div class="faq-i"><h3>Do I need an app or a marketing team?</h3><p>No. It runs from your phone over text. You decide what runs.</p></div>
+    <div class="faq-i"><h3>What does it cost?</h3><p>Your first growth test is free.</p></div>
+    <div class="faq-i"><h3>Who is it for?</h3><p>People starting internet-native businesses: online stores, apps and creators selling a product.</p></div>
+  </section>
+  <p class="fine"><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+</main>
+<!--POSTHOG-->
+<script src="/v/ph.js?v=2"></script>
+<script src="/v/followup.js"></script>
+<script src="/v/form.js"></script>
+<script src="/v/send.js?v=10"></script>
+</body>
+</html>

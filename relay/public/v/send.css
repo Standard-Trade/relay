@@ -1,0 +1,49 @@
+/* "Send us a reel" block: the main conversion on every hero. */
+.send { max-width: 520px; margin: 0 0 6px; }
+.send-switch { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(127,127,127,.16); margin-bottom: 12px; }
+.send-switch button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: inherit; }
+.send-switch button[aria-pressed="true"] { background: #fff; color: #111; opacity: 1; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.send-switch button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.send-go { white-space: normal; display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 16px 22px; border-radius: 16px; color: #fff; font-weight: 650; font-size: clamp(16px, 2.2vw, 18px); text-decoration: none; box-shadow: 0 8px 20px -10px rgba(0,0,0,.5); transition: transform .18s cubic-bezier(.16,1,.3,1), filter .18s; }
+.send-go:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.send-go:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.send-go[data-app="imessage"] { background: #0a6cd6; }
+.send-go[data-app="whatsapp"] { background: #0f7f43; }
+.send-go svg, .send-switch svg { flex: none; }
+.send-note { font-size: 14px; margin: 10px 0 0; }
+.send-email { font-size: 14px; margin: 18px 0 0; }
+.send-email button { all: unset; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.send-email button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+[data-send-form][hidden] { display: none !important; }
+.send-label { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; text-align: left; }
+.send-label b { font-weight: 650; }
+.send-label small { font-size: 13px; font-weight: 500; }
+
+/* In-app browsers (TikTok, Instagram, Facebook): the sheet shown on tap. */
+.send-sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); }
+.send-sheet[hidden] { display: none; }
+.send-sheet-card { position: relative; width: 100%; max-width: 480px; margin: 0 auto; padding: 24px 20px calc(20px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; background: #fff; color: #111; font-family: "General Sans", system-ui, sans-serif; text-align: center; }
+.send-sheet-t { font-size: 17px; font-weight: 650; margin: 0 32px 16px; }
+.send-sheet-copy { all: unset; box-sizing: border-box; cursor: pointer; display: block; width: 100%; margin-top: 10px; padding: 14px 18px; border-radius: 16px; border: 1px solid #d9d9d6; font-weight: 600; font-size: 16px; }
+.send-sheet-copy.send-sheet-primary { border: 0; background: #0a6cd6; color: #fff; margin: 0 0 10px; box-shadow: 0 8px 20px -10px rgba(0,0,0,.5); }
+.send-sheet-hint + .send-go { margin-top: 18px; }
+.send-sheet-copy:focus-visible, .send-sheet-x:focus-visible { outline: 2px solid #111; outline-offset: 2px; }
+.send-sheet-hint { font-size: 14px; color: #6b6b6b; margin: 14px 0 0; }
+.send-sheet-x { all: unset; cursor: pointer; position: absolute; top: 10px; right: 12px; width: 36px; height: 36px; line-height: 36px; text-align: center; font-size: 24px; color: #6b6b6b; border-radius: 999px; }
+
+/* Arrived from an in-app browser: draw the eye to the one button. */
+@keyframes send-arrive { 0%, 100% { box-shadow: 0 8px 20px -10px rgba(0,0,0,.5), 0 0 0 0 rgba(10,108,214,.55); } 50% { box-shadow: 0 8px 20px -10px rgba(0,0,0,.5), 0 0 0 10px rgba(10,108,214,0); } }
+.send-go-arrived { animation: send-arrive 1.6s ease-out 3; }
+@media (prefers-reduced-motion: reduce) { .send-go-arrived { animation: none; } }
+/* "Text me" (flagged): phone in, we text first. */
+/* Scoped to the sheet so each hero's own form styles don't leak in. */
+.send-sheet form.send-textme { display: block; max-width: none; margin: 18px 0 0; padding: 16px 0 0; border: 0; border-top: 1px solid #ececea; border-radius: 0; background: none; color: #111; text-align: left; font-family: "General Sans", system-ui, sans-serif; }
+.send-sheet .send-sheet .send-textme label { color: #111; }
+.send-textme label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.send-sheet .send-textme div { display: flex; gap: 8px; }
+.send-sheet .send-textme input[type=tel] { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 12px 14px; border: 1px solid #d9d9d6; border-radius: 12px; background: #fff; color: #111; }
+.send-sheet .send-textme button { all: unset; box-sizing: border-box; cursor: pointer; padding: 12px 16px; border-radius: 12px; background: #111; color: #fff; font-weight: 600; font-size: 16px; }
+.send-textme button:disabled { opacity: .6; }
+.send-textme .hp { position: absolute; left: -9999px; }
+.send-textme-msg { font-size: 14px; color: #b3261e; min-height: 18px; margin: 6px 0 0; }
+.send-textme-ok { margin: 0; font-weight: 600; text-align: center; }

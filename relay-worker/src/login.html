@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Standard Grow sign-in</title>
+<link rel="icon" href="/logo-32.png">
+<style>:root{--bg:#fbfbfa;--ink:#1c1c1c;--line:#e6e5e1;--accent:#0F3D2E}@media (prefers-color-scheme:dark){:root{--bg:#111112;--ink:#ececec;--line:#2a2a2d;--accent:#C8F169}}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Inter",sans-serif}form{max-width:320px;margin:18vh auto;padding:0 16px;display:flex;flex-direction:column;gap:10px}
+h1{font-size:15px;margin:0;display:flex;gap:8px;align-items:center}h1 img{width:24px;height:24px}input,button{font:inherit;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink)}button{background:var(--accent);border-color:var(--accent);color:var(--bg);cursor:pointer}#e{color:#c0392b;min-height:1em}</style></head>
+<body><form id="f"><h1><img src="/logo-180.png" alt="">Standard Grow</h1><input id="p" type="password" placeholder="Password" autofocus autocomplete="current-password"><button>Sign in</button><div id="e"></div></form>
+<script>f.onsubmit=async e=>{e.preventDefault();const r=await fetch('/admin/api/login',{method:'POST',headers:{'X-Relay':'1','Content-Type':'application/json'},body:JSON.stringify({password:p.value})});if(r.ok)location.reload();else{const j=await r.json().catch(()=>({}));document.getElementById('e').textContent=j.error||'Sign-in failed'}}</script></body></html>

@@ -1,0 +1,42 @@
+name = "standard-grow"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-10-01"
+
+[build]
+# CI builds (or restores) build/ itself and sets WORKER_PREBUILT.
+command = "test -n \"$WORKER_PREBUILT\" || worker-build --release"
+
+# The public site (home, terms, privacy, logos, TikTok verification file).
+# Matching files are served directly; everything else runs the Worker.
+[assets]
+directory = "../relay/public"
+binding = "ASSETS"
+# The homepage runs the Worker first so it can assign a hero variant.
+run_worker_first = ["/", "/index.html", "/join", "/join.html"]
+
+[vars]
+PUBLIC_URL = "https://grow.standardtrade.ai"
+# PostHog project key (public by design; it only allows sending events).
+POSTHOG_KEY = "phc_AMsX9pHgL6BBbD5aBXQBZzGyWYP2APqdrVaMabTicTqh"
+POSTHOG_HOST = "https://us.i.posthog.com"
+
+# A Worker route on the existing proxied hostname: the Worker answers before
+# the request would reach any origin, so the Mac tunnel is no longer used.
+[[routes]]
+pattern = "grow.standardtrade.ai/*"
+zone_name = "standardtrade.ai"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "standard-grow"
+database_id = "c1dde471-411a-4a00-9d09-74337c514c6d"
+migrations_dir = "migrations"
+
+# Slide images, kept 14 days each.
+[[kv_namespaces]]
+binding = "MEDIA"
+id = "b19fa57cece4481ab2e19ace25555e61"
+
+# The posting loop: once a minute.
+[triggers]
+crons = ["* * * * *"]

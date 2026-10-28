@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standard Grow</title>
+<link rel="icon" href="/logo-32.png">
+<style>
+  /* V1 — The thread is the page. Light, Apple Messages world. */
+  :root { --im-them: var(--them); --im-sub: var(--sub); --bg: #ffffff; --ink: #0b0b0c; --sub: #6e6e73; --me: #0062cc; --them: #e9e9eb; --line: #d2d2d7; }
+  * { box-sizing: border-box; }
+  ::selection { background: #0a84ff; color: #fff; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 620px; margin: 0 auto; padding: 20px 16px 64px; }
+  .top { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0 18px; border-bottom: 0.5px solid var(--line); margin: 0 -16px 18px; }
+  .top img { width: 56px; height: 56px; border-radius: 50%; }
+  .top span { font-size: 13px; color: var(--ink); }
+  .reelcard { width: min(46%, 220px); margin: 2px 0 4px auto; border-radius: 16px; overflow: hidden; background: var(--im-them, #e9e9eb); }
+  .reelthumb { position: relative; aspect-ratio: 4 / 5; }
+  .reelthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .reelicon { position: absolute; top: 8px; right: 8px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+  .reelmeta { padding: 6px 10px 8px; font-size: 12.5px; line-height: 1.25; font-weight: 600; }
+  .reelmeta small { display: block; font-weight: 400; color: var(--im-sub, #8e8e93); font-size: 11.5px; }
+  .when { text-align: center; font-size: 12px; color: var(--sub); margin: 8px 0 12px; }
+  .b { max-width: 80%; width: fit-content; padding: 9px 15px; border-radius: 20px; margin: 3px 0; font-size: 17px; line-height: 1.32; animation: pop .5s cubic-bezier(.16,1,.3,1) both; }
+  .me { margin-left: auto; background: var(--me); color: #fff; }
+  .them { background: var(--them); }
+  .gap { margin-top: 14px; }
+  h1.b { font-size: clamp(26px, 5.2vw, 34px); line-height: 1.12; font-weight: 700; letter-spacing: -0.02em; padding: 14px 18px; border-radius: 24px; }
+  .snap { display: block; width: min(46%, 200px); margin: 3px 0 3px auto; border-radius: 18px; aspect-ratio: 3/4; object-fit: cover; animation: pop .5s cubic-bezier(.16,1,.3,1) both; }
+  .b:nth-of-type(2), .snap { animation-delay: .1s } .b:nth-of-type(3) { animation-delay: .2s } .b:nth-of-type(4) { animation-delay: .3s }
+  @keyframes pop { from { transform: translateY(6px) scale(.98); } }
+  @media (prefers-reduced-motion: reduce) { .b, .snap { animation: none; } }
+  form { margin-top: 26px; display: flex; gap: 8px; align-items: center; padding: 6px 6px 6px 16px; border: 1px solid var(--line); border-radius: 26px; }
+  form input[type=email] { flex: 1; min-width: 0; border: 0; outline: 0; font: inherit; background: transparent; color: var(--ink); padding: 8px 0; }
+  form input::placeholder { color: #8e8e93; }
+  form button { border: 0; background: var(--me); color: #fff; font: inherit; font-weight: 600; font-size: 16px; padding: 10px 16px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: transform .15s ease-out, filter .15s; }
+  form button:hover { filter: brightness(1.08); } form button:active { transform: scale(.97); } form button:disabled { opacity: .6; cursor: default; }
+  form:focus-within { border-color: var(--me); box-shadow: 0 0 0 3px rgba(0,98,204,.18); }
+  .err { color: #d70015; font-size: 14px; min-height: 20px; margin: 8px 16px 0; }
+  .ok { margin-top: 26px; }
+  .fine { text-align: center; color: var(--sub); font-size: 13px; margin-top: 14px; }
+  .hp { position: absolute; left: -9999px; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --ink: #f5f5f7; --them: #26252a; --line: #38383a; --sub: #98989d; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top"><img src="/logo-180.png" alt="Standard Grow"><span>Standard Grow</span></div>
+  <div class="when">iMessage · Today 8:12 AM</div>
+  <div class="reelcard"><div class="reelthumb"><img src="/reel-ad.jpg" alt=""><svg class="reelicon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><path d="M2.5 8h19M8.5 2.5l3 5.5M14.5 2.5l3 5.5"/><path d="M10 11.5v6l5-3z" fill="#fff" stroke="none"/></svg></div><div class="reelmeta">Instagram<small>instagram.com/reel</small></div></div>
+  <div class="b me">this reel stopped my scroll. can my store do this?</div>
+  <h1 class="b them gap">Yes. Send me any reel that stops your scroll and I'll turn it into a growth experiment for your store.</h1>
+  <div class="b them">You'll see the finished ads and the budget first. Nothing runs until you reply yes.</div>
+
+  <form data-variant="v1" novalidate>
+    <input type="email" name="email" placeholder="Your email" autocomplete="email" aria-label="Email" required>
+    <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <button>Get my first experiment</button>
+  </form>
+  <p class="b me ok" hidden>You're on the list. We'll text your first experiment when your spot opens.</p>
+  <p class="err" role="alert"></p>
+  <p class="fine">For people starting stores, apps and creator brands. <a href="/privacy" style="color:inherit">Privacy</a></p>
+</main>
+<script src="/v/followup.js"></script>
+<script src="/v/form.js"></script>
+</body>
+</html>

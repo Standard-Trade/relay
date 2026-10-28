@@ -1,0 +1,17 @@
+{
+  "name": "relay-worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/landing.test.mjs",
+    "deploy": "npm test && wrangler deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "playwright": "1.64.1",
+    "wrangler": "^4.152.0"
+  }
+}

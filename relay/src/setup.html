@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay setup</title>
+<style>
+  :root {
+    --bg: #fbfbfa; --panel: #ffffff; --ink: #1c1c1c; --muted: #6b6b6b; --line: #e6e5e1;
+    --accent: #5b5bd6; --accent-ink: #ffffff; --ok: #2e7d4f; --warn: #b26a00; --bad: #c0392b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111112; --panel: #18181a; --ink: #ececec; --muted: #9a9a9a; --line: #2a2a2d;
+      --accent: #8b8bf0; --accent-ink: #111; --ok: #5cc28a; --warn: #e0a53a; --bad: #ef6b5e; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 16px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  h1 { font-size: 15px; font-weight: 600; margin: 0; }
+  h2 { font-size: 13px; font-weight: 600; margin: 0 0 2px; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  .step { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px 14px; }
+  label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
+  input, select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.danger { color: var(--bad); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  .hint { color: var(--muted); font-size: 12px; }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .copy { display: inline-flex; gap: 6px; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  td.num { font-variant-numeric: tabular-nums; }
+  th.num, td.num { text-align: right; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .ok { background: var(--ok); } .warn { background: var(--warn); } .bad { background: var(--bad); } .off { background: var(--line); }
+  .actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+  .timeline { position: relative; margin-top: 6px; }
+  .tl-row { display: grid; grid-template-columns: 140px 1fr; align-items: center; height: 26px; border-bottom: 1px solid var(--line); }
+  .tl-track { position: relative; height: 100%; }
+  .tl-hours { display: grid; grid-template-columns: 140px 1fr; color: var(--muted); font-size: 11px; }
+  .tl-hours div:last-child { display: flex; justify-content: space-between; }
+  .tick { position: absolute; top: 6px; width: 3px; height: 14px; border-radius: 2px; background: var(--accent); }
+  .tick.extra { background: var(--line); }
+  .banner { border: 1px solid var(--bad); color: var(--bad); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: none; }
+  .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); padding: 18px; width: min(560px, calc(100% - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  .muted { color: var(--muted); }
+  @media (max-width: 640px) { .hide-sm { display: none; } .tl-row, .tl-hours { grid-template-columns: 90px 1fr; } }
+  .strip { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0 4px; }
+  .thumb { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 4px; }
+  .thumb:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .strip img { width: 54px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 4px; display: block; border: 1px solid var(--line); }
+  .c-blue { --acc: #4c8dff; } .c-green { --acc: #3fb871; } .c-amber { --acc: #e0a032; }
+  .c-pink { --acc: #e8609b; } .c-purple { --acc: #9a7bff; } .c-teal { --acc: #2fb5b0; }
+  .review { max-width: 560px; width: 92vw; }
+  .review form { display: grid; gap: 12px; }
+  .review label { display: grid; gap: 4px; }
+  #reviewForm label.check { display: flex !important; flex-direction: row; gap: 8px; align-items: center; justify-content: flex-start; text-align: left; }
+  #reviewForm label.check input { width: auto; margin: 0; flex: none; }
+  #reviewForm button:disabled { opacity: .45; cursor: not-allowed; }
+  .review textarea, .review select { font: inherit; }
+  .creator { display: flex; gap: 10px; align-items: center; }
+  .creator img { width: 40px; height: 40px; border-radius: 50%; background: var(--line); }
+  .consent { font-size: 13px; }
+  .cmt { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 12.5px; }
+  .cmt span { color: var(--ink); }
+  .acct { display: inline-flex; align-items: center; gap: 6px; }
+  .acct .sw { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); flex: none; }
+  .tl-row .tick:not(.extra) { background: var(--acc); }
+  .tag { display: inline-block; font-size: 11px; line-height: 16px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); margin-left: 4px; white-space: nowrap; }
+  .viewer { border: 0; padding: 12px; background: var(--panel); color: var(--ink); border-radius: 10px; max-width: 96vw; }
+  .viewer::backdrop { background: rgba(0,0,0,.72); }
+  .view-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; }
+  .view-body { display: flex; align-items: center; gap: 8px; }
+  .view-body img { height: min(78vh, 760px); aspect-ratio: 9 / 16; object-fit: contain; border-radius: 6px; background: #000; display: block; }
+  .nav { font-size: 22px; width: 36px; height: 48px; padding: 0; }
+  .nav:disabled { opacity: .3; }
+  #viewCap { max-width: min(78vh * 9 / 16 + 88px, 92vw); margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Relay</h1>
+    <div class="row" style="margin:0">
+      <span id="engine" class="hint"></span>
+      <button id="stopBtn"></button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner"></div>
+
+  <section>
+    <h2><span class="step">1</span>Connection</h2>
+    <p class="sub">Once per computer. TikTok fetches slide images from your public URL, and sends you back there after sign-in.</p>
+    <div class="grid">
+      <label>Your time zone (hours from UTC)
+        <input id="utc" type="number" min="-12" max="14" step="1"></label>
+      <label>Public URL (your tunnel)
+        <input id="base" placeholder="https://media.yourdomain.com"></label>
+      <label>Time jitter (± minutes)
+        <input id="jitter" type="number" min="0" max="30"></label>
+      <label>TikTok client key
+        <input id="ckey" placeholder="from developers.tiktok.com"></label>
+      <label>TikTok client secret
+        <input id="csecret" type="password" placeholder="saved locally, never shown"></label>
+    </div>
+    <div class="row">
+      <button class="primary" id="saveSettings">Save</button>
+      <span class="hint" id="redirectWrap"></span>
+    </div>
+    <details style="margin-top:10px">
+      <summary class="hint">How to set this up</summary>
+      <ol class="hint">
+        <li>Run a tunnel to <code>127.0.0.1:8787</code> on a subdomain you own, e.g. <code>cloudflared tunnel --url http://127.0.0.1:8787</code> with a named tunnel on <code>media.yourdomain.com</code>. Paste that URL above.</li>
+        <li>In the TikTok developer portal, create an app with the Content Posting API, scopes <code>video.upload</code> and <code>video.publish</code>. Add the redirect URI shown after you save, and verify your public URL's domain under URL properties.</li>
+        <li>Instagram: create a Meta app with Instagram Login, add each account as a tester, and generate a token for it.</li>
+      </ol>
+    </details>
+  </section>
+
+  <section>
+    <h2><span class="step">2</span>Accounts</h2>
+    <p class="sub">Add each account, then connect it. New accounts start on the ramp: 2 posts a day in week 1, 4 in week 2, 6 in week 3, then up to their cap.</p>
+    <table>
+      <thead><tr><th>Account</th><th class="hide-sm">Platform</th><th class="hide-sm">Style</th><th>Today</th><th>Status</th><th></th></tr></thead>
+      <tbody id="accounts"></tbody>
+    </table>
+    <div class="row"><button class="primary" id="addBtn">Add account</button></div>
+  </section>
+
+  <section>
+    <h2><span class="step">3</span>Schedule</h2>
+    <p class="sub">Daily posting times per account. Colored marks are used today; gray marks wait for the ramp. Each post moves a few minutes either way so accounts don't post in lockstep.</p>
+    <div class="timeline" id="timeline"></div>
+    <h2 style="margin-top:16px">Coming up <button id="approveAll" style="margin-left:8px">Approve all</button></h2>
+    <table><thead><tr><th>When</th><th>Account</th><th>Slides and caption</th><th></th></tr></thead><tbody id="queue"></tbody></table>
+    <p class="hint" id="queueEmpty">Nothing queued. Render a day with <code>engine/batch.py relay/relay.json queue/&lt;date&gt;/</code>, then <code>relay import queue/&lt;date&gt;/manifest.json &lt;date&gt;</code>.</p>
+  </section>
+
+  <section id="waitlistWrap" style="display:none">
+    <h2>Waitlist</h2>
+    <p class="sub" id="waitlistLine"></p>
+    <a id="waitlistCsv" href="#">Download CSV</a>
+  </section>
+
+  <section id="resultsWrap" style="display:none">
+    <h2>Results, last 7 days</h2>
+    <p class="sub">Read from TikTok every hour. ↑ marks a breakout: at least 5× its account's median views. <a id="csv" href="#">Download CSV</a></p>
+    <table><thead><tr><th>Sent</th><th>Account</th><th>Hook</th><th class="num">Views</th><th class="num hide-sm">Likes</th><th class="num hide-sm">Shares</th></tr></thead><tbody id="results"></tbody></table>
+  </section>
+
+  <section id="attentionWrap" style="display:none">
+    <h2>Needs a look</h2>
+    <p class="sub">Posts that failed, or that were mid-send when Relay stopped. Check the account, then requeue or drop.</p>
+    <table><tbody id="attention"></tbody></table>
+  </section>
+</main>
+
+<dialog id="acctDialog">
+  <form method="dialog" id="acctForm">
+    <h2 id="acctTitle">Add account</h2>
+    <p class="sub">Use the handle without @.</p>
+    <div class="grid">
+      <label>Handle <input name="handle" required pattern="[A-Za-z0-9_.]+"></label>
+      <label>Platform
+        <select name="platform"><option value="tiktok">TikTok</option><option value="instagram">Instagram</option><option value="dryrun">Test (doesn't post)</option></select></label>
+      <label>TikTok mode
+        <select name="mode"><option value="inbox">Inbox: I finish each post in the app</option><option value="direct">Direct: post publicly (needs TikTok audit)</option></select></label>
+      <label>Max posts a day <input name="daily_cap" type="number" min="1" max="10" value="8"></label>
+      <label>Ramp by week (4 numbers) <input name="ramp" value="2, 4, 6, 8"></label>
+      <label>Min minutes between posts <input name="min_gap_minutes" type="number" min="0" value="90"></label>
+      <label>Daily times <input name="slots" placeholder="07:00, 09:00, 11:00, 13:00"></label>
+      <label>Style <input name="style" placeholder="cartoon-cover"></label>
+      <label>Angle <input name="angle" placeholder="quick numbered tips"></label>
+      <label>Product <input name="product" list="productList" placeholder="Standard Grow"><datalist id="productList"></datalist></label>
+      <label>Color <select name="color"><option value="">Automatic</option><option value="blue">Blue</option><option value="green">Green</option><option value="amber">Amber</option><option value="pink">Pink</option><option value="purple">Purple</option><option value="teal">Teal</option></select></label>
+      <label id="igWrap">Instagram user id <input name="ig_user_id"></label>
+    </div>
+    <div class="row">
+      <button class="primary" value="save">Save</button>
+      <button value="cancel" formnovalidate>Cancel</button>
+      <span class="hint" id="acctErr" style="color:var(--bad)"></span>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="tokenDialog">
+  <form method="dialog">
+    <h2>Connect Instagram</h2>
+    <p class="sub">Paste a long-lived Instagram token for <span id="tokenHandle" class="mono"></span>. It stays on this computer.</p>
+    <input id="tokenInput" type="password" style="width:100%">
+    <div class="row"><button class="primary" value="save">Save</button><button value="cancel">Cancel</button></div>
+  </form>
+</dialog>
+
+<dialog id="review" class="review">
+  <form method="dialog" id="reviewForm">
+    <h2>Post to TikTok</h2>
+    <p class="hint" id="rvAll" hidden>Your choices apply to every post waiting for approval.</p>
+    <div class="creator"><img id="rvAvatar" alt=""><div><div class="hint">Posting as</div><b id="rvName"></b></div></div>
+    <div id="rvSlides"></div>
+    <label>Caption <textarea name="caption" rows="3"></textarea></label>
+    <label>Who can view this post
+      <select name="privacy" required><option value="" selected disabled>Select</option></select></label>
+    <label class="check"><input type="checkbox" name="comments"> Allow comments</label>
+    <div class="disclose">
+      <label class="check"><input type="checkbox" name="disclose"> Disclose post content</label>
+      <p class="hint">Turn on to disclose that this post promotes goods or services in exchange for something of value.</p>
+      <div id="rvBrand" hidden>
+        <label class="check"><input type="checkbox" name="yourBrand"> Your brand <span class="hint">You are promoting yourself or your own business.</span></label>
+        <label class="check"><input type="checkbox" name="branded"> Branded content <span class="hint">You are promoting another brand or a third party.</span></label>
+        <p class="hint" id="rvLabel"></p>
+      </div>
+    </div>
+    <p class="consent" id="rvConsent"></p>
+    <p class="hint">After you post, it can take a few minutes for the post to process and appear on your profile.</p>
+    <div class="row">
+      <button class="primary" value="post" id="rvPost" disabled>Approve and post</button>
+      <button value="cancel" formnovalidate>Cancel</button>
+      <span class="hint" id="rvErr" style="color:var(--bad)"></span>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="viewer" class="viewer">
+  <div class="view-top"><span id="viewCount" class="mono"></span><form method="dialog"><button aria-label="Close">Close</button></form></div>
+  <div class="view-body">
+    <button id="viewPrev" class="nav" aria-label="Previous slide">‹</button>
+    <img id="viewImg" alt="">
+    <button id="viewNext" class="nav" aria-label="Next slide">›</button>
+  </div>
+  <p id="viewCap" class="hint"></p>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let state = null, editing = null;
+
+// Hosted on Cloudflare the page lives at /admin; locally at /.
+const BASE = location.pathname.startsWith('/admin') ? '/admin' : '';
+async function api(path, body) {
+  path = BASE + path;
+  const opts = body === undefined ? {} : { method: 'POST', headers: { 'X-Relay': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+  // Cloudflare can drop a single request (e.g. a cold start over the CPU
+  // limit); GETs retry twice before the page reports a problem.
+  let r;
+  for (let i = 0; ; i++) {
+    r = await fetch(path, opts);
+    if (r.ok || body !== undefined || i === 2 || r.status < 500) break;
+    await new Promise(res => setTimeout(res, 600 * (i + 1)));
+  }
+  const j = await r.json().catch(() => ({ error: `Relay didn't answer (HTTP ${r.status}); retrying` }));
+  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  return j;
+}
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function minutes(slot) { const [h, m] = slot.split(':').map(Number); return h * 60 + m; }
+function fmtTime(unix) {
+  const off = state.settings.utc_offset_hours * 3600;
+  const d = new Date((unix + off) * 1000);
+  const day = Math.floor((unix + off) / 86400) - Math.floor((state.now + off) / 86400);
+  const hm = d.toISOString().slice(11, 16);
+  return (day === 0 ? 'Today ' : day === 1 ? 'Tomorrow ' : d.toISOString().slice(5, 10) + ' ') + hm;
+}
+
+function render() {
+  slideSets = [];
+  const s = state.settings;
+  for (const [id, v] of [['#utc', s.utc_offset_hours], ['#base', s.media_base_url], ['#jitter', s.jitter_minutes], ['#ckey', s.tiktok_client_key]]) {
+    if (document.activeElement !== $(id)) $(id).value = v;
+  }
+  $('#csecret').placeholder = s.tiktok_secret_set ? 'saved (enter a new one to replace)' : 'saved locally, never shown';
+  $('#redirectWrap').innerHTML = s.redirect_uri ? `Redirect URI for TikTok: <span class="copy mono">${esc(s.redirect_uri)} <button data-copy="${esc(s.redirect_uri)}">Copy</button></span>` : '';
+  $('#engine').innerHTML = state.stopped ? '<span class="dot bad"></span>Stopped' : '<span class="dot ok"></span>Running';
+  $('#stopBtn').textContent = state.stopped ? 'Start posting' : 'Stop all posting';
+  $('#stopBtn').className = state.stopped ? 'primary' : 'danger';
+  const banner = $('#banner');
+  banner.style.display = state.stopped ? 'block' : 'none';
+  banner.textContent = 'Posting is stopped. If a platform flagged an account, check it in the app before starting again.';
+
+  const rows = state.accounts.map(a => {
+    const c = a.config;
+    let status, dot;
+    if (!a.connected) { status = 'Not connected'; dot = 'off'; }
+    else if (a.paused) { status = 'Paused'; dot = 'warn'; }
+    else { status = 'Ready'; dot = 'ok'; }
+    const connect = !a.connected || a.paused && c.platform !== 'dryrun'
+      ? `<button data-connect="${esc(c.handle)}" data-platform="${esc(c.platform)}">${a.connected ? 'Reconnect' : 'Connect'}</button>` : '';
+    const pause = a.connected ? `<button data-${a.paused ? 'resume' : 'pause'}="${esc(c.handle)}">${a.paused ? 'Resume' : 'Pause'}</button>` : '';
+    return `<tr>
+      <td>${acct(c.handle)}<div class="hint">${esc(c.angle)}</div></td>
+      <td class="hide-sm">${c.platform === 'tiktok' ? 'TikTok · ' + esc(c.mode) : c.platform === 'instagram' ? 'Instagram' : 'Test'}</td>
+      <td class="hide-sm mono">${esc(c.style) || '<span class="muted">—</span>'}</td>
+      <td class="num">${a.today}/${a.cap_today}${c.platform === 'tiktok' && c.mode === 'inbox' ? `<div class="hint">${a.pending} in inbox</div>` : ''}</td>
+      <td><span class="dot ${dot}"></span>${status}</td>
+      <td><div class="actions">${connect}${pause}<button data-edit="${esc(c.handle)}">Edit</button><button class="danger" data-del="${esc(c.handle)}">Remove</button></div></td>
+    </tr>`;
+  });
+  $('#accounts').innerHTML = rows.join('') || '<tr><td colspan="6" class="hint">No accounts yet.</td></tr>';
+
+  const tl = state.accounts.map(a => {
+    const c = a.config;
+    const slots = [...c.slots].sort((x, y) => minutes(x) - minutes(y));
+    const ticks = slots.map((sl, i) => `<span class="tick ${i < a.cap_today ? '' : 'extra'}" title="${esc(sl)}" style="left:calc(${minutes(sl) / 1440 * 100}% - 1px)"></span>`).join('');
+    return `<div class="tl-row c-${colorOf(c.handle)}"><div>${acct(c.handle, true)}</div><div class="tl-track">${ticks}</div></div>`;
+  }).join('');
+  $('#timeline').innerHTML = state.accounts.length
+    ? `<div class="tl-hours"><div></div><div><span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div></div>${tl}`
+    : '<p class="hint">Add accounts with daily times to see the schedule.</p>';
+
+  $('#queue').innerHTML = state.queue.map(q => `<tr><td class="mono">${fmtTime(q.at)}</td><td>${acct(q.account)}</td>
+    <td>${strip(q.images, q.caption || q.hook)}<div class="hint">${esc(q.caption || q.hook)}</div>${comment(q.comment)}</td>
+    <td>${q.approved ? '<span class="hint">Approved</span>' : ''}<button data-review="${esc(q.id)}">${q.approved ? 'Change' : 'Review and post'}</button></td></tr>`).join('');
+  $('#queueEmpty').style.display = state.queue.length ? 'none' : 'block';
+
+  $('#attentionWrap').style.display = state.attention.length ? 'block' : 'none';
+  $('#attention').innerHTML = state.attention.map(p => `<tr><td class="mono">${esc(p.id)}</td><td>${esc(p.status)}</td><td>${esc(p.hook)}</td>
+    <td><div class="actions"><button data-requeue="${esc(p.id)}">Requeue</button><button class="danger" data-drop="${esc(p.id)}">Drop</button></div></td></tr>`).join('');
+}
+
+let lastResults = 0;
+async function refresh() {
+  try { state = await api('/api/state'); render(); }
+  catch (e) { $('#engine').textContent = e.message; }
+  if (state?.waitlist) renderWaitlist(state.waitlist);
+  if (state?.settings?.hosted && Date.now() - lastResults > 300000) {
+    lastResults = Date.now();
+    try { renderResults(await api('/api/results?days=7')); } catch (e) { lastResults = 0; }
+  }
+}
+
+function renderWaitlist(w) {
+  if (!w) return;
+  $('#waitlistWrap').style.display = 'block';
+  const parts = Object.entries(w.by_source).map(([k, v]) => `${esc(k)} ${v}`).join(' · ');
+  const fmt = (o) => Object.entries(o || {}).map(([k, v]) => `${esc(k)} ${v}`).join(' · ') || 'no answers yet';
+  $('#waitlistLine').innerHTML = `<b>${w.total}</b> sign-ups${parts ? ': ' + parts : ''}.<br>Building: ${fmt(w.by_business)}.<br>Community app: ${fmt(w.by_community)}.<br>Link each account's bio to <span class="mono">grow.standardtrade.ai/?src=&lt;handle&gt;</span> so sign-ups are credited to it.`;
+  $('#waitlistCsv').href = BASE + '/api/waitlist.csv';
+}
+
+// Slide thumbnails; clicking one opens the whole slideshow in the viewer.
+let slideSets = [];
+function strip(keys, caption) {
+  if (!(keys || []).length) return '';
+  const set = slideSets.push({ keys, caption: caption || '' }) - 1;
+  return `<div class="strip">${keys.map((k, i) => `<button class="thumb" data-set="${set}" data-i="${i}" aria-label="Open slide ${i + 1}"><img src="/m/${esc(k)}" alt="" loading="lazy"></button>`).join('')}</div>`;
+}
+
+// Post to TikTok review: shows the creator's live options and records the
+// creator's own choices. Nothing is preselected, per TikTok's posting rules.
+const PRIVACY = { PUBLIC_TO_EVERYONE: 'Everyone', MUTUAL_FOLLOW_FRIENDS: 'Friends', FOLLOWER_OF_CREATOR: 'Followers', SELF_ONLY: 'Only me' };
+let reviewing = null;
+let approvingAll = false;
+async function openReview(id, all) {
+  const q = state.queue.find(x => x.id === id);
+  if (!q) return;
+  reviewing = q;
+  approvingAll = !!all;
+  const f = $('#reviewForm');
+  f.reset();
+  $('#rvErr').textContent = '';
+  $('#rvBrand').hidden = true;
+  $('#rvAll').hidden = !approvingAll;
+  $('#rvSlides').innerHTML = strip(q.images, q.caption || q.hook);
+  f.caption.value = q.caption || '';
+  let info;
+  try { info = await api('/api/creator-info?handle=' + encodeURIComponent(q.account)); }
+  catch (e) { toast(e.message); return; }
+  $('#rvName').textContent = info.creator_nickname || '@' + q.account;
+  $('#rvAvatar').src = info.creator_avatar_url || '';
+  f.privacy.innerHTML = '<option value="" selected disabled>Select</option>' +
+    (info.privacy_level_options || []).map(o => `<option value="${esc(o)}">${esc(PRIVACY[o] || o)}</option>`).join('');
+  f.comments.disabled = !!info.comment_disabled;
+  // Pre-fill with the choices this user made last time (their own pick,
+  // never a value we chose), so a routine approval is one click.
+  let last = {};
+  try { last = JSON.parse(localStorage.getItem('relay.lastReview') || '{}'); } catch (e) {}
+  if (last.privacy && [...f.privacy.options].some(o => o.value === last.privacy)) f.privacy.value = last.privacy;
+  if (last.comments !== undefined && !f.comments.disabled) f.comments.checked = last.comments;
+  syncReview();
+  $('#review').showModal();
+}
+function syncReview() {
+  const f = $('#reviewForm');
+  const on = f.disclose.checked;
+  $('#rvBrand').hidden = !on;
+  const yours = on && f.yourBrand.checked, branded = on && f.branded.checked;
+  for (const o of f.privacy.options) if (o.value === 'SELF_ONLY') {
+    o.disabled = branded;
+    o.title = branded ? 'Branded content visibility cannot be set to private.' : '';
+    if (branded && f.privacy.value === 'SELF_ONLY') f.privacy.value = '';
+  }
+  $('#rvLabel').textContent = branded ? "Your photo will be labeled 'Paid partnership'." : yours ? "Your photo will be labeled 'Promotional content'." : on ? 'You need to indicate if your content promotes yourself, a third party, or both.' : '';
+  const music = '<a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank">Music Usage Confirmation</a>';
+  const bc = '<a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank">Branded Content Policy</a>';
+  $('#rvConsent').innerHTML = branded ? `By posting, you agree to TikTok's ${bc} and ${music}.` : `By posting, you agree to TikTok's ${music}.`;
+  $('#rvPost').disabled = !f.privacy.value || (on && !yours && !branded);
+}
+$('#reviewForm').addEventListener('change', syncReview);
+$('#review').addEventListener('close', async () => {
+  if ($('#review').returnValue !== 'post' || !reviewing) return;
+  const f = $('#reviewForm');
+  try { localStorage.setItem('relay.lastReview', JSON.stringify({ privacy: f.privacy.value, comments: f.comments.checked })); } catch (e) {}
+  const body = { id: reviewing.id, caption: f.caption.value, privacy_level: f.privacy.value, disable_comment: !f.comments.checked,
+    brand_organic_toggle: f.disclose.checked && f.yourBrand.checked, brand_content_toggle: f.disclose.checked && f.branded.checked };
+  if (approvingAll) {
+    // Same choices for every waiting post; each is still checked against its
+    // own account's live creator info on the server.
+    let ok = 0, failed = [];
+    for (const q of state.queue.filter(x => !x.approved)) {
+      try { state = await api('/api/approve', { ...body, id: q.id, caption: q.caption }); ok++; }
+      catch (e) { failed.push('@' + q.account + ': ' + e.message); }
+    }
+    render();
+    toast(`Approved ${ok} post${ok === 1 ? '' : 's'}` + (failed.length ? `; ${failed.length} need a look` : ''));
+    if (failed.length) alert(failed.join('\n'));
+    return;
+  }
+  try { state = await api('/api/approve', body); render(); toast('Approved. It posts at its scheduled time.'); }
+  catch (e) { $('#rvErr').textContent = e.message; $('#review').showModal(); }
+});
+$('#approveAll').onclick = () => {
+  const first = state.queue.find(x => !x.approved);
+  if (first) openReview(first.id, true); else toast('Everything is approved');
+};
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-review]');
+  if (b) openReview(b.dataset.review);
+});
+
+// The comment to paste when publishing the post from the TikTok inbox.
+function comment(c) {
+  return c ? `<div class="cmt"><span>Comment: ${esc(c)}</span> <button data-copy="${esc(c)}">Copy</button></div>` : '';
+}
+
+const SWATCHES = ['blue', 'green', 'amber', 'pink', 'purple', 'teal'];
+function colorOf(handle) {
+  const a = state?.accounts.find(x => x.config.handle === handle);
+  if (a?.config.color) return a.config.color;
+  const i = state ? state.accounts.findIndex(x => x.config.handle === handle) : -1;
+  return SWATCHES[(i < 0 ? 0 : i) % SWATCHES.length];
+}
+function acct(handle, bare) {
+  const a = state?.accounts.find(x => x.config.handle === handle);
+  const prod = a?.config.product && !bare ? ` <span class="tag">${esc(a.config.product)}</span>` : '';
+  return `<span class="acct c-${colorOf(handle)}"><span class="sw"></span><span class="mono">@${esc(handle)}</span></span>${prod}`;
+}
+
+let viewer = { set: 0, i: 0 };
+function showSlide() {
+  const s = slideSets[viewer.set];
+  $('#viewImg').src = '/m/' + s.keys[viewer.i];
+  $('#viewCount').textContent = `${viewer.i + 1} / ${s.keys.length}`;
+  $('#viewCap').textContent = s.caption;
+  $('#viewPrev').disabled = viewer.i === 0;
+  $('#viewNext').disabled = viewer.i === s.keys.length - 1;
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('.thumb');
+  if (!t) return;
+  viewer = { set: Number(t.dataset.set), i: Number(t.dataset.i) };
+  showSlide();
+  $('#viewer').showModal();
+});
+$('#viewPrev').onclick = () => { if (viewer.i > 0) { viewer.i--; showSlide(); } };
+$('#viewNext').onclick = () => { if (viewer.i < slideSets[viewer.set].keys.length - 1) { viewer.i++; showSlide(); } };
+$('#viewer').addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') $('#viewPrev').click();
+  if (e.key === 'ArrowRight') $('#viewNext').click();
+});
+$('#viewer').addEventListener('click', (e) => { if (e.target === $('#viewer')) $('#viewer').close(); });
+
+function renderResults(r) {
+  $('#resultsWrap').style.display = r.posts.length ? 'block' : 'none';
+  $('#csv').href = BASE + '/api/results.csv?days=7';
+  const fmt = (x) => x == null ? '<span class="muted">—</span>' : Number(x).toLocaleString();
+  $('#results').innerHTML = r.posts.map(p => `<tr>
+    <td class="mono">${p.sent_at ? fmtTime(p.sent_at) : ''}</td><td>${acct(p.account)}</td>
+    <td>${strip(p.images, p.hook)}${comment(p.comment)}${p.breakout ? '<strong title="Breakout">↑</strong> ' : ''}${esc(p.hook)}</td>
+    <td class="num">${fmt(p.views)}</td><td class="num hide-sm">${fmt(p.likes)}</td><td class="num hide-sm">${fmt(p.shares)}</td></tr>`).join('');
+}
+
+async function act(body, msg) {
+  try { state = await api('/api/action', body); render(); if (msg) toast(msg); }
+  catch (e) { toast(e.message); }
+}
+
+function openAccount(handle) {
+  editing = handle;
+  const f = $('#acctForm');
+  const c = handle ? state.accounts.find(a => a.config.handle === handle).config : null;
+  $('#acctTitle').textContent = handle ? 'Edit @' + handle : 'Add account';
+  f.handle.value = c?.handle ?? ''; f.handle.readOnly = !!handle;
+  f.platform.value = c?.platform ?? 'tiktok';
+  f.mode.value = c?.mode ?? 'inbox';
+  f.daily_cap.value = c?.daily_cap ?? 8;
+  f.ramp.value = (c?.ramp ?? [2, 4, 6, 8]).join(', ');
+  f.min_gap_minutes.value = c?.min_gap_minutes ?? 90;
+  f.slots.value = (c?.slots ?? ['07:00', '09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00']).join(', ');
+  f.style.value = c?.style ?? '';
+  f.angle.value = c?.angle ?? '';
+  f.product.value = c?.product ?? '';
+  f.color.value = c?.color ?? '';
+  $('#productList').innerHTML = [...new Set(state.accounts.map(a => a.config.product).filter(Boolean))].map(x => `<option value="${esc(x)}">`).join('');
+  f.ig_user_id.value = c?.ig_user_id ?? '';
+  $('#acctErr').textContent = '';
+  syncPlatform();
+  $('#acctDialog').showModal();
+}
+function syncPlatform() {
+  const f = $('#acctForm');
+  $('#igWrap').style.display = f.platform.value === 'instagram' ? '' : 'none';
+  f.mode.disabled = f.platform.value !== 'tiktok';
+}
+
+$('#acctForm').platform.addEventListener('change', syncPlatform);
+$('#acctDialog').addEventListener('close', async () => {
+  if ($('#acctDialog').returnValue !== 'save') return;
+  const f = $('#acctForm');
+  const list = (s) => s.split(/[,\s]+/).filter(Boolean);
+  const ramp = list(f.ramp.value).map(Number);
+  const body = {
+    handle: f.handle.value.trim().replace(/^@/, ''), platform: f.platform.value,
+    mode: f.platform.value === 'tiktok' ? f.mode.value : 'direct',
+    daily_cap: Number(f.daily_cap.value), ramp: ramp.length === 4 ? ramp : [2, 4, 6, 8],
+    min_gap_minutes: Number(f.min_gap_minutes.value), slots: list(f.slots.value),
+    style: f.style.value.trim(), angle: f.angle.value.trim(),
+    product: f.product.value.trim(), color: f.color.value,
+    ig_user_id: f.platform.value === 'instagram' ? (f.ig_user_id.value.trim() || null) : null,
+  };
+  try { state = await api('/api/account', body); render(); toast('Saved @' + body.handle); }
+  catch (e) { $('#acctErr').textContent = e.message; $('#acctDialog').showModal(); }
+});
+
+$('#tokenDialog').addEventListener('close', () => {
+  if ($('#tokenDialog').returnValue !== 'save') return;
+  act({ do: 'token', handle: $('#tokenHandle').textContent, token: $('#tokenInput').value }, 'Token saved');
+  $('#tokenInput').value = '';
+});
+
+$('#saveSettings').addEventListener('click', async () => {
+  try {
+    state = await api('/api/settings', {
+      utc_offset_hours: Number($('#utc').value), media_base_url: $('#base').value,
+      jitter_minutes: Number($('#jitter').value), tiktok_client_key: $('#ckey').value,
+      tiktok_client_secret: $('#csecret').value,
+    });
+    $('#csecret').value = ''; render(); toast('Saved');
+  } catch (e) { toast(e.message); }
+});
+
+$('#addBtn').addEventListener('click', () => openAccount(null));
+$('#stopBtn').addEventListener('click', () => act({ do: state.stopped ? 'start' : 'stop' }, state.stopped ? 'Posting started' : 'Posting stopped'));
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const d = b.dataset;
+  if (d.copy) { navigator.clipboard.writeText(d.copy); toast('Copied'); }
+  else if (d.edit) openAccount(d.edit);
+  else if (d.del) { if (confirmRemove(d.del)) { try { state = await api('/api/account/delete', { handle: d.del }); render(); } catch (err) { toast(err.message); } } }
+  else if (d.pause) act({ do: 'pause', handle: d.pause }, 'Paused @' + d.pause);
+  else if (d.resume) act({ do: 'resume', handle: d.resume }, 'Resumed @' + d.resume);
+  else if (d.requeue) act({ do: 'requeue', id: d.requeue }, 'Requeued');
+  else if (d.drop) act({ do: 'drop', id: d.drop }, 'Dropped');
+  else if (d.connect) {
+    if (d.platform === 'instagram') { $('#tokenHandle').textContent = d.connect; $('#tokenDialog').showModal(); }
+    else if (d.platform === 'tiktok') {
+      try { const r = await api('/api/login-url?handle=' + encodeURIComponent(d.connect)); window.open(r.url, '_blank'); toast('Sign in as @' + d.connect + ' in the new tab'); }
+      catch (err) { toast(err.message); }
+    }
+  }
+});
+// Removing an account is the one destructive click, so it asks inline rather
+// than with a blocking browser dialog: click Remove twice within 3 seconds.
+let armed = null;
+function confirmRemove(h) {
+  if (armed === h) { armed = null; return true; }
+  armed = h; toast('Click Remove again to remove @' + h); setTimeout(() => { if (armed === h) armed = null; }, 3000);
+  return false;
+}
+
+refresh();
+// Every 30s while the tab is visible: each call costs Worker CPU, and the
+// free plan drops requests that run over (Cloudflare error 1102).
+setInterval(() => { if (!document.hidden) refresh(); }, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+</script>
+</body>
+</html>

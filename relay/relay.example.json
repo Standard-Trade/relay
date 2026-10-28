@@ -1,0 +1,12 @@
+{
+  "utc_offset_hours": -7,
+  "media_dir": "./media",
+  "media_base_url": "https://media.example.com",
+  "jitter_minutes": 7,
+  "tiktok": {"client_key": "YOUR_TIKTOK_CLIENT_KEY", "redirect_uri": "https://media.example.com/callback"},
+  "instagram": {"api_base": "https://graph.instagram.com/v23.0"},
+  "accounts": [
+    {"handle": "tipsaccount1", "platform": "dryrun", "mode": "inbox", "daily_cap": 8, "min_gap_minutes": 90},
+    {"handle": "tipsaccount2", "platform": "dryrun", "mode": "inbox", "daily_cap": 8, "min_gap_minutes": 90}
+  ]
+}

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standard Grow</title>
+<link rel="icon" href="/logo-32.png">
+<style>
+  /* V3 — Brand at full volume. Deep green field, lime does the selling. */
+  @font-face { font-family: "General Sans"; src: url("/fonts/GeneralSans-Variable.woff2") format("woff2"); font-weight: 200 700; font-display: swap; }
+  :root { --green: #0F3D2E; --deep: #0a2c21; --lime: #C8F169; --ink: #f2f7ee; --muted: #d3e6da; --line: #1f5a46; }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--lime); color: var(--green); }
+  body { margin: 0; background: var(--green); color: var(--ink); font: 18px/1.5 "General Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 24px 56px; }
+  header { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  header img { width: 30px; height: 30px; border-radius: 8px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 56px; align-items: center; padding: 64px 0 24px; }
+  h1 { font-weight: 650; font-size: clamp(42px, 6.6vw, 84px); line-height: .98; letter-spacing: -0.04em; margin: 0 0 24px; text-wrap: balance; }
+  h1 span { color: var(--lime); }
+  .lede { color: var(--muted); font-size: 20px; max-width: 30ch; margin: 0 0 32px; }
+  form { display: flex; gap: 0; max-width: 520px; background: var(--deep); border: 1px solid var(--line); border-radius: 16px; padding: 6px; }
+  input[type=email] { flex: 1; min-width: 0; font: inherit; font-size: 17px; color: var(--ink); background: transparent; border: 0; padding: 12px 14px; outline: 0; }
+  input::placeholder { color: #7f9e90; }
+  form:focus-within { border-color: var(--lime); }
+  button { font: inherit; font-weight: 650; font-size: 17px; padding: 14px 22px; border: 0; border-radius: 11px; background: var(--lime); color: var(--green); cursor: pointer; white-space: nowrap; box-shadow: 0 6px 16px -6px rgba(0,0,0,.45); transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s; }
+  button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -8px rgba(0,0,0,.5); } button:disabled { opacity: .6; transform: none; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .err { color: #ffb4a8; font-size: 14px; min-height: 20px; margin: 10px 0 0; }
+  .ok { font-size: 20px; color: var(--lime); font-weight: 600; }
+  .fine { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .hp { position: absolute; left: -9999px; }
+  .slides { position: relative; height: 520px; }
+  .slides img { position: absolute; width: 230px; aspect-ratio: 9/16; object-fit: cover; border-radius: 18px; box-shadow: 0 24px 48px -16px rgba(0,0,0,.55); }
+  .slides img:nth-child(1) { left: 6%; top: 40px; transform: rotate(-7deg); }
+  .slides img:nth-child(2) { left: 30%; top: 0; z-index: 2; }
+  .slides img:nth-child(3) { left: 54%; top: 56px; transform: rotate(6deg); }
+  .cap { position: absolute; bottom: -8px; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 14px; }
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; padding-top: 40px; }
+    .slides { height: 380px; } .slides img { width: 168px; }
+    form { flex-direction: column; } button { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header><img src="/logo-180.png" alt="">Standard Grow</header>
+  <section class="hero">
+    <div data-form-scope>
+      <h1>Growth on autopilot. <span>You hold the wheel.</span></h1>
+      <p class="lede">Send Standard Grow a reel that stopped your scroll. You get back a finished experiment for your business, and it only runs when you say yes.</p>
+      <form data-variant="v3" novalidate>
+        <input type="email" name="email" placeholder="you@yourstore.com" autocomplete="email" aria-label="Email" required>
+        <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button>Get early access</button>
+      </form>
+      <p class="ok" hidden>You're on the list. We'll text you when it's your turn.</p>
+      <p class="err" role="alert"></p>
+    </div>
+    <div class="slides" aria-label="Slideshows Standard Grow made for itself">
+      <img src="/v/slide-c.jpg" alt=""><img src="/v/slide-a.jpg" alt=""><img src="/v/slide-b.jpg" alt="">
+    </div>
+  </section>
+</main>
+<script src="/v/followup.js"></script>
+<script src="/v/form.js"></script>
+</body>
+</html>

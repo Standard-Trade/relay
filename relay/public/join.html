@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standard Grow</title>
+<meta name="description" content="Your growth, on autopilot. Text us anything that inspires you and we turn it into a growth experiment for your business.">
+<meta property="og:title" content="Standard Grow">
+<meta property="og:description" content="Your growth, on autopilot. Text us anything that inspires you and we turn it into a growth experiment for your business.">
+<meta property="og:image" content="https://grow.standardtrade.ai/avatar-1080.png">
+<link rel="icon" href="/logo-32.png">
+<link rel="apple-touch-icon" href="/logo-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: "General Sans"; src: url("/fonts/GeneralSans-Variable.woff2") format("woff2"); font-weight: 200 700; font-display: swap; }
+  :root {
+    --bg: #fbfbf8; --panel: #ffffff; --ink: #13201a; --muted: #5d6b64; --line: #e3e6e1;
+    --brand: #0F3D2E; --lime: #C8F169; --bubble-me: #0F3D2E; --bubble-me-ink: #f4f9ef; --bubble-them: #eef0eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d1210; --panel: #141b18; --ink: #e8eee9; --muted: #9aa6a0; --line: #25302b;
+      --brand: #C8F169; --bubble-me: #C8F169; --bubble-me-ink: #0d1210; --bubble-them: #1d2622; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 "General Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 72px; }
+  header { display: flex; align-items: center; gap: 10px; }
+  header img { width: 32px; height: 32px; border-radius: 8px; }
+  header span { font-weight: 600; letter-spacing: -0.01em; }
+  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; padding: 64px 0 48px; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: clamp(36px, 5.4vw, 58px); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 20px; }
+  .lede { font-size: 19px; color: var(--muted); max-width: 32em; margin: 0 0 20px; }
+  .props { list-style: none; padding: 0; margin: 0 0 28px; display: grid; gap: 10px; max-width: 34em; }
+  .props li { padding-left: 22px; position: relative; color: var(--muted); }
+  .props li::before { content: ""; position: absolute; left: 0; top: .55em; width: 9px; height: 9px; border-radius: 2px; background: var(--brand); }
+  .props b { color: var(--ink); font-weight: 600; }
+  form { display: grid; gap: 10px; max-width: 440px; }
+  .row { display: flex; gap: 8px; }
+  input { flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  input:focus { outline: 2px solid var(--brand); outline-offset: -1px; }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 12px 18px; background: var(--brand); color: var(--bg); cursor: pointer; white-space: nowrap; }
+  button[disabled] { opacity: .6; cursor: default; }
+  .hint { font-size: 14px; color: var(--muted); }
+  .hp { position: absolute; left: -9999px; }
+  #done { display: none; font-size: 17px; }
+  #err { color: #c0392b; font-size: 14px; min-height: 1em; }
+
+  /* iPhone Messages look: blue sent bubbles, gray received, contact header, iMessage field. */
+  .phone { justify-self: center; width: min(340px, 100%); --im-bg: #ffffff; --im-them: #e9e9eb; --im-them-ink: #000; --im-me: #0a84ff; --im-sub: #8e8e93; --im-line: #d1d1d6;
+    background: var(--im-bg); border: 10px solid #1c1c1e; border-radius: 50px; padding: 0 12px 12px; overflow: hidden;
+    aspect-ratio: 9 / 19.5; display: flex; flex-direction: column; position: relative;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,.45); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; color: var(--im-them-ink); }
+  @media (prefers-color-scheme: dark) { .phone { --im-bg: #000; --im-them: #26252a; --im-them-ink: #fff; --im-line: #38383a; } }
+  .island { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 92px; height: 26px; border-radius: 14px; background: #000; }
+  .status { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; padding: 13px 16px 2px; }
+  .status svg { display: block; }
+  .thread { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+  .contact { text-align: center; padding: 4px 0 8px; border-bottom: 0.5px solid var(--im-line); margin: 0 -12px 8px; }
+  .contact img { width: 40px; height: 40px; border-radius: 50%; display: block; margin: 0 auto 4px; }
+  .contact span { font-size: 11.5px; }
+  .when { text-align: center; font-size: 11px; color: var(--im-sub); margin: 6px 0; }
+  .msg { max-width: 76%; padding: 6px 11px; border-radius: 17px; margin: 2px 0; font-size: 14px; line-height: 1.28; width: fit-content; }
+  .me { margin-left: auto; background: var(--im-me); color: #fff; }
+  .them { background: var(--im-them); color: var(--im-them-ink); }
+  .gap { margin-top: 8px; }
+  .rich { max-width: 76%; border-radius: 16px; overflow: hidden; background: var(--im-them); margin: 2px 0 2px auto; }
+  .rich .thumb { height: 120px; background: linear-gradient(160deg, #833ab4, #fd1d1d 55%, #fcb045); display: grid; place-items: center; color: #fff; font-size: 30px; }
+  .rich .meta { padding: 7px 11px 8px; font-size: 13px; line-height: 1.25; color: var(--im-them-ink); }
+  .rich .meta small { display: block; color: var(--im-sub); font-size: 12px; }
+  .photo { display: block; width: 50%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 16px; margin: 2px 0 4px auto; background: var(--im-them); }
+  .reelcard { width: 52%; margin: 2px 0 4px auto; border-radius: 16px; overflow: hidden; background: var(--im-them, #e9e9eb); }
+  .reelthumb { position: relative; aspect-ratio: 4 / 5; }
+  .reelthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .reelicon { position: absolute; top: 8px; right: 8px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+  .reelmeta { padding: 6px 10px 8px; font-size: 12.5px; line-height: 1.25; font-weight: 600; }
+  .reelmeta small { display: block; font-weight: 400; color: var(--im-sub, #8e8e93); font-size: 11.5px; }
+  .delivered { text-align: right; font-size: 11px; color: var(--im-sub); margin: 2px 4px 8px; }
+  .compose { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .compose b { width: 28px; height: 28px; border-radius: 50%; background: var(--im-them); display: grid; place-items: center; color: var(--im-sub); font-weight: 400; }
+  .compose span { flex: 1; border: 1px solid var(--im-line); border-radius: 18px; padding: 6px 12px; font-size: 14px; color: var(--im-sub); }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; border-top: 1px solid var(--line); padding-top: 40px; }
+  .step b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .step span { color: var(--muted); font-size: 15px; }
+  .step em { font-style: normal; font-family: "Source Serif 4", Georgia, serif; color: var(--brand); font-size: 22px; display: block; margin-bottom: 6px; }
+  .note { margin-top: 48px; padding: 20px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); font-size: 15px; }
+  .note b { color: var(--ink); }
+  footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+  footer a { color: inherit; }
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 40px; }
+    .steps { grid-template-columns: 1fr; }
+    /* On phones: email, website, then the button. */
+    .row { display: contents; }
+    #email { order: 1; } #site { order: 2; } #go { order: 3; } #err { order: 4; } .hint { order: 5; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header><img src="/logo-180.png" alt=""><span>Standard Grow</span></header>
+
+  <section class="hero">
+    <div>
+      <h1>Your growth, on autopilot. Your taste, in charge.</h1>
+      <p class="lede">Send us a reel you wish you'd made. We turn it into a growth experiment for your business and run it for you.</p>
+      <ul class="props">
+        <li><b>Run your growth from your phone.</b> It all happens in iMessage.</li>
+        <li><b>A reel stops your scroll.</b> Share it to us straight from Instagram or TikTok, and it becomes a test for your business.</li>
+        <li><b>Not just another AI tool.</b> Your taste leads. You make the calls; we make them real.</li>
+      </ul>
+      <form id="f" novalidate>
+        <div class="row">
+          <input id="email" type="email" name="email" placeholder="you@company.com" autocomplete="email" required aria-label="Email">
+          <button id="go">Join the waitlist</button>
+        </div>
+        <input id="site" type="url" name="site" placeholder="Your website (optional)" autocomplete="url" aria-label="Your website">
+        <input class="hp" id="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div id="err" role="alert"></div>
+        <p class="hint">For people starting internet-native businesses: stores, apps, newsletters, creator brands. We'll email you once, when your spot opens.</p>
+      </form>
+      <p id="done" role="status"><b>You're on the list.</b> We'll email you when your spot opens.</p>
+    </div>
+
+    <div class="phone" aria-hidden="true">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span style="display:flex;gap:5px;align-items:center">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+        <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor"><path d="M7.5 2.2c2.2 0 4.2.9 5.7 2.3l1.1-1.1A9.6 9.6 0 0 0 7.5.6 9.6 9.6 0 0 0 .7 3.4l1.1 1.1a8.1 8.1 0 0 1 5.7-2.3Zm0 3.2c1.3 0 2.5.5 3.4 1.4l1.1-1.1a6.4 6.4 0 0 0-9 0l1.1 1.1c.9-.9 2.1-1.4 3.4-1.4Zm0 3.2c-.5 0-.9.2-1.2.5l1.2 1.2 1.2-1.2c-.3-.3-.7-.5-1.2-.5Z"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="18" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity=".4"/></svg></span></div>
+      <div class="contact"><img src="/logo-180.png" alt=""><span>Standard Grow ›</span></div>
+      <div class="thread">
+      <div class="when">iMessage<br>Today 9:38 AM</div>
+      <div class="reelcard"><div class="reelthumb"><img src="/reel-ad.jpg" alt=""><svg class="reelicon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><path d="M2.5 8h19M8.5 2.5l3 5.5M14.5 2.5l3 5.5"/><path d="M10 11.5v6l5-3z" fill="#fff" stroke="none"/></svg></div><div class="reelmeta">Instagram<small>instagram.com/reel</small></div></div>
+      <div class="msg me">this reel stopped my scroll. can we do this for my store?</div>
+      <div class="msg them gap">Love it. The tactic: open on your customer's problem in six words, then show the fix.</div>
+      <div class="msg them">I made 3 slideshows in your style. $20 a day for 4 days, and we'll track cost per sign-up.</div>
+      <div class="msg them">Want me to run it?</div>
+      <div class="msg me gap">yes!</div>
+      <div class="delivered">Delivered</div>
+      </div>
+      <div class="compose"><b>+</b><span>iMessage</span></div>
+    </div>
+  </section>
+
+  <footer><span>© 2026 Standard Grow</span><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/publishing">How we post to TikTok</a></footer>
+</main>
+<script src="/v/followup.js"></script>
+<script>
+const f = document.getElementById('f'), err = document.getElementById('err'), go = document.getElementById('go');
+const src = new URLSearchParams(location.search).get('src') || document.referrer.replace(/^https?:\/\//, '').split('/')[0] || 'direct';
+f.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  err.textContent = '';
+  const email = document.getElementById('email').value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Please enter a valid email.'; return; }
+  go.disabled = true;
+  try {
+    const r = await fetch('/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, site: document.getElementById('site').value.trim(), src, company: document.getElementById('hp').value }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Something went wrong. Try again.');
+    f.style.display = 'none'; const done = document.getElementById('done'); done.style.display = 'block'; if (window.sgFollowup) window.sgFollowup(done, email);
+  } catch (e2) { err.textContent = e2.message; go.disabled = false; }
+});
+</script>
+</body>
+</html>

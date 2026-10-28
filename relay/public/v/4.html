@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standard Grow</title>
+<link rel="icon" href="/logo-32.png">
+<style>
+  /* V4 — Feels like the feed they just came from. Black, full-height, the phone screen is the hero. */
+  @font-face { font-family: "General Sans"; src: url("/fonts/GeneralSans-Variable.woff2") format("woff2"); font-weight: 200 700; font-display: swap; }
+  :root { --bg: #0b0b0c; --ink: #fafafa; --muted: #a1a1a6; --lime: #C8F169; --green: #0F3D2E; }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--lime); color: #000; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.5 "General Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .stage { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .shot { position: relative; overflow: hidden; background: #000; }
+  .shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+  .shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 78%, var(--bg)); }
+  .reelui { position: absolute; right: 26%; bottom: 90px; display: grid; gap: 22px; z-index: 1; }
+  .reelui svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linejoin: round; filter: drop-shadow(0 1px 3px rgba(0,0,0,.6)); }
+  .reellabel { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); color: #fff; font-weight: 650; font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,.5); z-index: 1; }
+  .copy { display: flex; flex-direction: column; justify-content: center; padding: 48px clamp(24px, 6vw, 88px); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: auto; padding-bottom: 48px; }
+  .brand img { width: 28px; height: 28px; border-radius: 7px; }
+  h1 { font-weight: 650; font-size: clamp(40px, 5.4vw, 72px); line-height: 1; letter-spacing: -0.04em; margin: 0 0 22px; text-wrap: balance; }
+  p.lede { color: var(--muted); font-size: 19px; max-width: 32ch; margin: 0 0 30px; }
+  form { display: grid; gap: 10px; max-width: 420px; }
+  input { font: inherit; font-size: 17px; padding: 15px 16px; border-radius: 14px; border: 1px solid #2c2c2e; background: #161618; color: var(--ink); outline: 0; }
+  input::placeholder { color: #8e8e93; }
+  input:focus { border-color: var(--lime); }
+  button { font: inherit; font-weight: 650; font-size: 17px; padding: 15px 18px; border: 0; border-radius: 14px; background: var(--ink); color: #000; cursor: pointer; transition: background .2s ease-out; }
+  button:hover { background: var(--lime); } button:disabled { opacity: .6; }
+  button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  .err { color: #ff8a80; font-size: 14px; min-height: 20px; margin: 10px 0 0; }
+  .ok { font-size: 20px; font-weight: 600; color: var(--lime); }
+  .fine { color: #8e8e93; font-size: 13px; margin-top: auto; padding-top: 48px; }
+  .fine a { color: inherit; }
+  .hp { position: absolute; left: -9999px; }
+  @media (max-width: 860px) {
+    .stage { grid-template-columns: 1fr; }
+    .reelui { right: 16px; bottom: 60px; } .shot { height: 46svh; } .shot::after { background: linear-gradient(180deg, transparent 55%, var(--bg)); }
+    .copy { padding-top: 8px; } .brand { position: absolute; top: 18px; left: 20px; padding: 0; z-index: 2; }
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+  <div class="shot"><img src="/reel-ad.jpg" alt="A reel playing full screen"></div>
+  <section class="copy" data-form-scope>
+    <div class="brand"><img src="/logo-180.png" alt="">Standard Grow</div>
+    <h1>Send the reel. Run your version.</h1>
+    <p class="lede">Found a reel that stopped your scroll? Share it to us from Instagram or TikTok and we build a growth experiment for your business around it.</p>
+    <form data-variant="v4" novalidate>
+      <input type="email" name="email" placeholder="Email" autocomplete="email" aria-label="Email" required>
+      <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button>Save my spot</button>
+    </form>
+    <p class="ok" hidden>Spot saved. Keep saving reels.</p>
+    <p class="err" role="alert"></p>
+    <p class="fine">For people starting stores, apps and creator brands. <a href="/privacy">Privacy</a></p>
+  </section>
+</main>
+<script src="/v/followup.js"></script>
+<script src="/v/form.js"></script>
+</body>
+</html>
