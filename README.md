@@ -45,6 +45,9 @@ Cloudflare Workers Builds deploys `relay-worker` on every push to `main`:
 - deploy command: `npx wrangler d1 migrations apply standard-grow --remote && npx wrangler deploy`
 - build variable: `WORKER_PREBUILT=1`
 
+Only `main` builds on Cloudflare. Pull requests run the `test` workflow,
+which compiles and tests `relay/` and `relay-worker/` before merge.
+
 To run your own copy, change the name, route, D1 and KV ids in
 `relay-worker/wrangler.toml`, then set the secrets the Worker reads
 (`ADMIN_PASSWORD`, `TIKTOK_CLIENT_SECRET`) with `wrangler secret put`, and

@@ -1,0 +1,29 @@
+name: test
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.93.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            relay
+            relay-worker
+      - name: Relay tests
+        working-directory: relay
+        run: cargo test --locked
+      - name: Worker tests
+        working-directory: relay-worker
+        run: cargo test --locked
+      - name: Slide kit
+        run: |
+          python3 -m py_compile slides/check.py slides/engine/render.py
+          node --check slides/render.mjs
