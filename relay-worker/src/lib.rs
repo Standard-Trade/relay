@@ -990,6 +990,13 @@ struct ReferralRow {
     referral: String,
 }
 
+/// A "Text me" request: a new number, or a code added to a number on file
+/// that has none (?6 ref, ?8 when the code was added). Never replaces a code.
+const TEXTME_UPSERT: &str = "INSERT INTO textme (phone, src, inapp, created_at, ip_hash, ref, person, ref_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+     ON CONFLICT(phone) DO UPDATE SET ref = excluded.ref, person = excluded.person, ref_at = excluded.ref_at WHERE textme.ref IS NULL AND excluded.ref IS NOT NULL";
+/// Codes Grow hasn't taken yet, added within the window (?1), oldest first.
+const REFERRALS_DUE: &str = "SELECT phone, person, ref FROM textme WHERE ref IS NOT NULL AND person IS NOT NULL AND ref_sent_at IS NULL AND ref_at > ?1 ORDER BY ref_at LIMIT 10";
+
 /// "Text me" requests from a referral link, handed to Standard Grow so the
 /// friend's chat there is credited to the store that referred them. Only
 /// Grow's opaque person id and the code leave, never the number. A request
@@ -1000,7 +1007,7 @@ async fn push_referrals(c: &Ctx) -> Result<()> {
     let rows = c
         .db
         .all::<ReferralRow>(
-            "SELECT phone, person, ref FROM textme WHERE ref IS NOT NULL AND person IS NOT NULL AND ref_sent_at IS NULL AND created_at > ?1 ORDER BY created_at LIMIT 10",
+            REFERRALS_DUE,
             &[n(t - 7 * 86_400)],
         )
         .await?;
@@ -1322,9 +1329,17 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
         // from a referral link adds the code if it has none yet.
         c.db
             .run(
-                "INSERT INTO textme (phone, src, inapp, created_at, ip_hash, ref, person) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-                 ON CONFLICT(phone) DO UPDATE SET ref = excluded.ref, person = excluded.person WHERE textme.ref IS NULL AND excluded.ref IS NOT NULL",
-                &[s(&phone), s(&src), s(&inapp), n(t), s(&ip_hash), opt(referral.as_deref()), s(&grow_person(&phone))],
+                TEXTME_UPSERT,
+                &[
+                    s(&phone),
+                    s(&src),
+                    s(&inapp),
+                    n(t),
+                    s(&ip_hash),
+                    opt(referral.as_deref()),
+                    s(&grow_person(&phone)),
+                    if referral.is_some() { n(t) } else { JsValue::NULL },
+                ],
             )
             .await?;
         return Response::from_json(&json!({ "ok": true }));
@@ -1883,6 +1898,42 @@ mod tests {
         assert_eq!(grow_person("+14155550134"), id);
         assert_eq!(grow_person("14155550134"), id);
         assert_ne!(grow_person("+14155550135"), id);
+    }
+
+    /// The textme SQL on SQLite (what D1 runs): a code added later to a
+    /// number on file is due from when it was added, never from the first
+    /// request, and a code is never replaced.
+    #[test]
+    fn a_code_added_to_an_old_number_is_still_sent() {
+        let db = rusqlite::Connection::open_in_memory().unwrap();
+        db.execute_batch(include_str!("../migrations/0007_textme.sql")).unwrap();
+        db.execute_batch(include_str!("../migrations/0008_textme_ref.sql")).unwrap();
+        let day = 86_400;
+        let now = 100 * day;
+        let ask = |phone: &str, at: i64, code: Option<&str>| {
+            db.execute(TEXTME_UPSERT, rusqlite::params![phone, "", "", at, "", code, grow_person(phone), code.map(|_| at)]).unwrap();
+        };
+        let due = || -> Vec<(String, String)> {
+            let mut q = db.prepare(REFERRALS_DUE).unwrap();
+            let rows = q.query_map([now - 7 * day], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(2)?))).unwrap();
+            rows.map(Result::unwrap).collect()
+        };
+        // Asked eight days ago without a code; today from a referral link.
+        ask("+14155550101", now - 8 * day, None);
+        ask("+14155550101", now, Some("rf_0a1b2c3d4e5f"));
+        // A new number with a code, and one with a code from eight days ago.
+        ask("+14155550102", now - day, Some("rf_00112233aabb"));
+        ask("+14155550103", now - 8 * day, Some("rf_00112233aabb"));
+        // A second code never replaces the first or restarts its window.
+        ask("+14155550103", now, Some("rf_0a1b2c3d4e5f"));
+        assert_eq!(
+            due(),
+            vec![("+14155550102".into(), "rf_00112233aabb".into()), ("+14155550101".into(), "rf_0a1b2c3d4e5f".into())]
+        );
+        let first: i64 = db.query_row("SELECT created_at FROM textme WHERE phone = '+14155550101'", [], |r| r.get(0)).unwrap();
+        assert_eq!(first, now - 8 * day);
+        let kept: String = db.query_row("SELECT ref FROM textme WHERE phone = '+14155550103'", [], |r| r.get(0)).unwrap();
+        assert_eq!(kept, "rf_00112233aabb");
     }
 
     #[test]

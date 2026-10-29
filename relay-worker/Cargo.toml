@@ -15,6 +15,10 @@ anyhow = "1"
 sha2 = "0.10"
 getrandom = { version = "0.2", features = ["js"] }
 
+[dev-dependencies]
+# Runs the D1 migrations and queries on SQLite in tests.
+rusqlite = { version = "0.32", features = ["bundled"] }
+
 [profile.release]
 # Small wasm starts faster, which keeps each request under the free
 # plan's CPU limit (Cloudflare error 1102).
