@@ -45,9 +45,8 @@ Cloudflare Workers Builds deploys `relay-worker` on every push to `main`:
 - deploy command: `npx wrangler d1 migrations apply standard-grow --remote && npx wrangler deploy`
 - build variable: `WORKER_PREBUILT=1`
 
-Other branches and pull requests run the same build command as a check
-(preview command `test -s build/index_bg.wasm`), so a change that doesn't
-compile shows up red before it reaches `main`. They never deploy.
+Only `main` builds on Cloudflare. Pull requests run the `test` workflow,
+which compiles and tests `relay/` and `relay-worker/` before merge.
 
 To run your own copy, change the name, route, D1 and KV ids in
 `relay-worker/wrangler.toml`, then set the secrets the Worker reads
