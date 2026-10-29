@@ -14,7 +14,8 @@ RUSTUP=1.28.2
 RUSTUP_SHA256=20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c
 WORKER_BUILD=0.8.7
 if ! command -v rustup >/dev/null; then
-  init="$(mktemp)"
+  # rustup-init picks its mode from its own file name, so keep that name.
+  init="$(mktemp -d)/rustup-init"
   curl --proto '=https' --tlsv1.2 -sSf -o "$init" \
     "https://static.rust-lang.org/rustup/archive/$RUSTUP/x86_64-unknown-linux-gnu/rustup-init"
   echo "$RUSTUP_SHA256  $init" | sha256sum -c -
