@@ -5,8 +5,10 @@
   var NUM = '17023508103';
   // A referral link (?ref=rf_<12 hex>) carries its code into the first
   // text, which is where Standard Grow reads it. Anything else is dropped.
+  // "Text me" sends the same code with the phone number.
   var REF = (new URLSearchParams(location.search).get('ref') || '').toLowerCase();
-  var MSG = 'Hey, help me grow my business' + (/^rf_[0-9a-f]{12}$/.test(REF) ? ' (ref ' + REF + ')' : '');
+  if (!/^rf_[0-9a-f]{12}$/.test(REF)) REF = '';
+  var MSG = 'Hey, help me grow my business' + (REF ? ' (ref ' + REF + ')' : '');
   var APPS = {
     imessage: { label: 'iMessage', href: 'sms:+' + NUM + '&body=' + encodeURIComponent(MSG),
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.285 0A5.273 5.273 0 0 0 0 5.285v13.43A5.273 5.273 0 0 0 5.285 24h13.43A5.273 5.273 0 0 0 24 18.715V5.285A5.273 5.273 0 0 0 18.715 0ZM12 4.154a8.809 7.337 0 0 1 8.809 7.338A8.809 7.337 0 0 1 12 18.828a8.809 7.337 0 0 1-2.492-.303A8.656 7.337 0 0 1 5.93 19.93a9.929 7.337 0 0 0 1.54-2.155 8.809 7.337 0 0 1-4.279-6.283A8.809 7.337 0 0 1 12 4.154" fill="#34C759"/></svg>' },
@@ -107,7 +109,7 @@
       if (phone.replace(/\D/g, '').length < 10) { msg.textContent = 'Enter a phone number with area code.'; tf.phone.focus(); return; }
       btn.disabled = true; msg.textContent = '';
       fetch('/api/textme', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone, company: tf.company.value, src: (window.sgSource || 'direct') + '|' + (document.documentElement.dataset.variant || ''), inapp: inapp,
+        body: JSON.stringify({ phone: phone, company: tf.company.value, src: (window.sgSource || 'direct') + '|' + (document.documentElement.dataset.variant || ''), inapp: inapp, ref: REF,
           ph: window.posthog && typeof window.posthog.get_distinct_id === 'function' ? window.posthog.get_distinct_id() : '' }) })
         .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn\u2019t go through. Try again.'); }); })
         .then(function () {

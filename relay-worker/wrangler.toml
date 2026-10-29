@@ -19,6 +19,9 @@ PUBLIC_URL = "https://grow.standardtrade.ai"
 # PostHog project key (public by design; it only allows sending events).
 POSTHOG_KEY = "phc_AMsX9pHgL6BBbD5aBXQBZzGyWYP2APqdrVaMabTicTqh"
 POSTHOG_HOST = "https://us.i.posthog.com"
+# Where "Text me" referral codes go: Standard Grow's gateway. Off until the
+# GROW_TEXTME_TOKEN secret is set here and the same value on the gateway.
+GROW_TEXTME_HOOK = "https://rust-personal-agent-staging.onrender.com/webhooks/textme"
 
 # A Worker route on the existing proxied hostname: the Worker answers before
 # the request would reach any origin, so the Mac tunnel is no longer used.

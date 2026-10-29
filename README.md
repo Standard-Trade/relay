@@ -53,6 +53,14 @@ To run your own copy, change the name, route, D1 and KV ids in
 (`ADMIN_PASSWORD`, `TIKTOK_CLIENT_SECRET`) with `wrangler secret put`, and
 enter your TikTok app's client key in the admin settings.
 
+"Text me" requests that came from a referral link (`?ref=rf_...`) keep the
+code. Once a minute the Worker hands each one to Standard Grow at
+`GROW_TEXTME_HOOK` (a `[vars]` entry), sending only Grow's opaque person id
+for the number and the code, so the friend's chat is credited to the store
+that referred them. It is off until the secret `GROW_TEXTME_TOKEN` (32+
+characters) is set here and the same value is set as `GROW_TEXTME_TOKEN` on
+the Grow gateway.
+
 ## License
 
 MIT

@@ -598,6 +598,8 @@ struct Ctx {
     tiktok_secret: Option<String>,
     /// PostHog project key and capture host, for the growth dashboard.
     posthog: Option<(String, String)>,
+    /// Standard Grow's referral hook and its bearer token, both required.
+    grow_hook: Option<(String, String)>,
 }
 
 /// An event for PostHog. Relay's events have no person profile; the
@@ -654,6 +656,10 @@ async fn ctx(env: &Env) -> Result<Ctx> {
         tiktok_secret,
         posthog: match (env.var("POSTHOG_KEY"), env.var("POSTHOG_HOST")) {
             (Ok(k), Ok(h)) if !k.to_string().is_empty() => Some((k.to_string(), h.to_string())),
+            _ => None,
+        },
+        grow_hook: match (env.var("GROW_TEXTME_HOOK"), env.secret("GROW_TEXTME_TOKEN")) {
+            (Ok(u), Ok(k)) if u.to_string().starts_with("https://") && k.to_string().len() >= 32 => Some((u.to_string(), k.to_string())),
             _ => None,
         },
     })
@@ -976,12 +982,79 @@ async fn refresh_tokens(c: &Ctx, t: i64) -> Result<()> {
     Ok(())
 }
 
+#[derive(Deserialize)]
+struct ReferralRow {
+    phone: String,
+    person: String,
+    #[serde(rename = "ref")]
+    referral: String,
+}
+
+/// "Text me" requests from a referral link, handed to Standard Grow so the
+/// friend's chat there is credited to the store that referred them. Only
+/// Grow's opaque person id and the code leave, never the number. A request
+/// Grow hasn't taken is tried again each minute for a week.
+async fn push_referrals(c: &Ctx) -> Result<()> {
+    let Some((hook, token)) = &c.grow_hook else { return Ok(()) };
+    let t = now();
+    let rows = c
+        .db
+        .all::<ReferralRow>(
+            "SELECT phone, person, ref FROM textme WHERE ref IS NOT NULL AND person IS NOT NULL AND ref_sent_at IS NULL AND created_at > ?1 ORDER BY created_at LIMIT 10",
+            &[n(t - 7 * 86_400)],
+        )
+        .await?;
+    let auth = format!("Bearer {token}");
+    for r in rows {
+        let body = json!({ "person": r.person, "code": r.referral }).to_string();
+        match http(Method::Post, hook, &[("Content-Type", "application/json"), ("Authorization", &auth)], Some(body)).await {
+            // 400 is a request Grow will never take, so it isn't retried.
+            Ok(h) if h.status < 300 || h.status == 400 => {
+                if h.status == 400 {
+                    console_error!("grow referral refused: {}", h.text);
+                }
+                c.db.run("UPDATE textme SET ref_sent_at = ?1 WHERE phone = ?2", &[n(t), s(&r.phone)]).await?;
+            }
+            Ok(h) => {
+                console_error!("grow referral: HTTP {}", h.status);
+                break;
+            }
+            Err(e) => {
+                console_error!("grow referral: {e}");
+                break;
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Standard Grow's person id for a phone number: the hash its gateway takes
+/// of a sender (`handle_person` in spectrum-gateway, `stable_id` with domain
+/// grow-person/v1 and the one part "phone:<digits>").
+fn grow_person(phone: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let part = format!("phone:{}", phone.chars().filter(char::is_ascii_digit).collect::<String>());
+    let mut h = Sha256::new();
+    h.update(b"grow-person/v1");
+    h.update((part.len() as u64).to_be_bytes());
+    h.update(part.as_bytes());
+    hex(&h.finalize())
+}
+
+/// A Standard Grow referral code: rf_ and 12 lowercase hex digits.
+fn valid_ref(r: &str) -> bool {
+    r.len() == 15 && r.starts_with("rf_") && r[3..].bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
 #[event(scheduled)]
 pub async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
     match ctx(&env).await {
         Ok(c) => {
             if let Err(e) = tick(&c).await {
                 console_error!("tick error: {e}");
+            }
+            if let Err(e) = push_referrals(&c).await {
+                console_error!("referral push error: {e}");
             }
         }
         Err(e) => console_error!("setup error: {e}"),
@@ -1231,6 +1304,8 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
         }
         let src = clip(v["src"].as_str().unwrap_or(""), 60);
         let inapp = clip(v["inapp"].as_str().unwrap_or(""), 20);
+        // A referral code from the page's ?ref=; anything else is dropped.
+        let referral = v["ref"].as_str().map(|r| r.trim().to_ascii_lowercase()).filter(|r| valid_ref(r));
         let is_new = c.db.first::<Count>("SELECT COUNT(*) AS n FROM textme WHERE phone = ?1", &[s(&phone)]).await?.map(|c| c.n).unwrap_or(0.0) == 0.0;
         if is_new {
             let (source, variant) = src.split_once('|').unwrap_or((src.as_str(), ""));
@@ -1240,13 +1315,16 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
             } else {
                 format!("textme:{}", &hex(&hmac(b"standard-grow-textme", phone.as_bytes()))[..16])
             };
-            let props = json!({ "source": if source.is_empty() { "direct" } else { source }, "hero_variant": variant, "inapp": inapp });
+            let props = json!({ "source": if source.is_empty() { "direct" } else { source }, "hero_variant": variant, "inapp": inapp, "referred": referral.is_some() });
             ph_send(&c, vec![ph_event("textme_submitted", &id, t, props)]).await;
         }
+        // A number asked once without a code keeps its row; a later request
+        // from a referral link adds the code if it has none yet.
         c.db
             .run(
-                "INSERT INTO textme (phone, src, inapp, created_at, ip_hash) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(phone) DO NOTHING",
-                &[s(&phone), s(&src), s(&inapp), n(t), s(&ip_hash)],
+                "INSERT INTO textme (phone, src, inapp, created_at, ip_hash, ref, person) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                 ON CONFLICT(phone) DO UPDATE SET ref = excluded.ref, person = excluded.person WHERE textme.ref IS NULL AND excluded.ref IS NOT NULL",
+                &[s(&phone), s(&src), s(&inapp), n(t), s(&ip_hash), opt(referral.as_deref()), s(&grow_person(&phone))],
             )
             .await?;
         return Response::from_json(&json!({ "ok": true }));
@@ -1562,15 +1640,24 @@ struct TextmeRow {
     src: Option<String>,
     inapp: Option<String>,
     created_at: f64,
+    #[serde(rename = "ref")]
+    referral: Option<String>,
 }
 
 /// "Text me" requests, newest first: the numbers to text back.
 async fn textme_csv(c: &Ctx) -> Result<String> {
-    let rows = c.db.all::<TextmeRow>("SELECT phone, src, inapp, created_at FROM textme ORDER BY created_at DESC", &[]).await?;
+    let rows = c.db.all::<TextmeRow>("SELECT phone, src, inapp, created_at, ref FROM textme ORDER BY created_at DESC", &[]).await?;
     let q = |s: &str| format!("\"{}\"", s.replace('"', "\"\""));
-    let mut out = String::from("phone,source,in_app_browser,requested_unix\n");
+    let mut out = String::from("phone,source,in_app_browser,requested_unix,referral_code\n");
     for r in rows {
-        out += &format!("{},{},{},{}\n", q(&r.phone), q(r.src.as_deref().unwrap_or("")), q(r.inapp.as_deref().unwrap_or("")), r.created_at as i64);
+        out += &format!(
+            "{},{},{},{},{}\n",
+            q(&r.phone),
+            q(r.src.as_deref().unwrap_or("")),
+            q(r.inapp.as_deref().unwrap_or("")),
+            r.created_at as i64,
+            q(r.referral.as_deref().unwrap_or(""))
+        );
     }
     Ok(out)
 }
@@ -1788,6 +1875,23 @@ async fn import(c: &Ctx, env: &Env, v: &Value) -> std::result::Result<Value, Str
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn grow_person_matches_the_gateway_hash() {
+        // Pinned on both sides: spectrum-gateway's handle_person("+14155550134").
+        let id = "84968d8a5e6737681638d8688998031045510715a5aff759f00e76ed96973e53";
+        assert_eq!(grow_person("+14155550134"), id);
+        assert_eq!(grow_person("14155550134"), id);
+        assert_ne!(grow_person("+14155550135"), id);
+    }
+
+    #[test]
+    fn only_well_formed_referral_codes_are_kept() {
+        assert!(valid_ref("rf_0a1b2c3d4e5f"));
+        for bad in ["", "rf_", "rf_0a1b2c3d4e5", "rf_0a1b2c3d4e5f0", "RF_0a1b2c3d4e5f", "rf_0A1B2C3D4E5F", "rf_0a1b2c3d4e5g", "xx_0a1b2c3d4e5f"] {
+            assert!(!valid_ref(bad), "{bad}");
+        }
+    }
 
     #[test]
     fn hmac_matches_rfc4231_case_2() {
