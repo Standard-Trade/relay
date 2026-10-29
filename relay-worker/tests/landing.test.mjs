@@ -332,6 +332,27 @@ async function library(browser, base) {
       await ctx.close();
     }
   }
+  // Referral links carry a valid code into the prefilled text, in Safari,
+  // Android and the in-app sheet; a malformed one is dropped.
+  for (const [ua, query, want] of [
+    ['safari', '?ref=RF_0123456789ab', 'Hey, help me grow my business (ref rf_0123456789ab)'],
+    ['chromeAndroid', '?ref=rf_0123456789ab', 'Hey, help me grow my business (ref rf_0123456789ab)'],
+    ['safari', '?ref=rf_0123%20x', 'Hey, help me grow my business'],
+  ]) {
+    const { ctx, p } = await page(browser, base, 'a', 390, UA[ua], query);
+    const href = decodeURIComponent(await p.getAttribute('.send a.send-go', 'href') || '');
+    check(href.endsWith(want), `[referral ${ua} ${query}] CTA href ${href} should end with "${want}"`);
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await page(browser, base, 'a', 390, UA.tiktokIos, '?ref=rf_0123456789ab');
+    await p.tap('.send a.send-go');
+    await p.waitForSelector('.send-sheet:not([hidden])', { timeout: 3000 }).catch(() => {});
+    const links = await p.$$eval('.send-sheet a', as => as.map(a => decodeURIComponent(a.href)));
+    check(links.some(h => h.includes('wa.me') && h.includes('(ref rf_0123456789ab)')), `[referral tiktok] sheet WhatsApp link lacks the code: ${links}`);
+    check(links.some(h => h.includes('ref=rf_0123456789ab')) || links.some(h => h.includes('(ref rf_0123456789ab)')), `[referral tiktok] sheet links drop the code: ${links}`);
+    await ctx.close();
+  }
   // AI attribution: ChatGPT's utm_source reaches ph.js on the hero.
   const { ctx, p } = await page(browser, base, 'a', 390);
   await p.goto(`${base}/h/a?utm_source=chatgpt.com`, { waitUntil: 'load' });
