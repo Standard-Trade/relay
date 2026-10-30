@@ -219,8 +219,9 @@ async function cta(browser, base) {
       await ctx.close();
     }
   }
-  // "Text me" in the sheet: on by default, ?textme=0 hides it.
-  for (const [query, on] of [['', true], ['?textme=0', false]]) {
+  // "Text me" in the sheet: on by default, ?textme=0 hides it. A referral
+  // code from ?ref= goes with the number; a malformed one is dropped.
+  for (const [query, on, ref] of [['', true, ''], ['?textme=0', false, ''], ['?ref=RF_0a1b2c3d4e5f', true, 'rf_0a1b2c3d4e5f'], ['?ref=rf_nothex', true, '']]) {
     const { ctx, p } = await page(browser, base, 'b', 390, UA.tiktokIos, query);
     const where = `[h/b tiktokIos textme${query || ' off'}]`;
     let posted = null;
@@ -236,7 +237,7 @@ async function cta(browser, base) {
       await p.fill('.send-textme input[type=tel]', '(415) 555-0134');
       await p.click('.send-textme button');
       await p.waitForSelector('.send-textme-ok', { timeout: 2000 }).catch(() => {});
-      check(posted && posted.phone === '(415) 555-0134' && posted.inapp === 'TikTok', `${where} posted ${JSON.stringify(posted)}`);
+      check(posted && posted.phone === '(415) 555-0134' && posted.inapp === 'TikTok' && posted.ref === ref, `${where} posted ${JSON.stringify(posted)}`);
       check(!!(await p.$('.send-textme-ok')), `${where} no confirmation after submit`);
     }
     await ctx.close();
