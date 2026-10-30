@@ -2,7 +2,7 @@
 // the message prefilled. iPhone and Mac default to iMessage, Android to
 // WhatsApp; the switch flips it. Email stays as a quiet fallback.
 (function () {
-  var NUM = '17023508103';
+  var NUM = '16287261402';
   // A referral link (?ref=rf_<12 hex>) carries its code into the first
   // text, which is where Standard Grow reads it. Anything else is dropped.
   // "Text me" sends the same code with the phone number.
