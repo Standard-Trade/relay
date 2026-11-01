@@ -154,7 +154,7 @@ async function cta(browser, base) {
     check(info.switchShown, `${where} iMessage/WhatsApp switch should be visible`);
     check(info.app === def, `${where} default app is ${info.app}, want ${def}`);
     check(want.test(info.href || ''), `${where} CTA href ${info.href} should match ${want}`);
-    check(info.text === 'Get my first growth test', `${where} CTA label is "${info.text}"`);
+    check(info.text === 'Text Grow', `${where} CTA label is "${info.text}"`);
     if (!inapp) check(decodeURIComponent(info.href || '').includes('Hey, help me grow my business'), `${where} CTA is missing the prefilled message`);
     check(!/702\D?350\D?8103/.test(info.body), `${where} phone number is visible on the page`);
     check(info.next !== 'send-note', `${where} helper text under the CTA`);
@@ -244,7 +244,7 @@ async function cta(browser, base) {
   }
 }
 
-const DESC = 'Standard Grow, by Standard Trade, is a number you text a reel to. It sends back ads and a budget for your business, runs them once you approve, and reports what they brought in.';
+const DESC = 'Standard Grow, by Standard Trade, is a number you text about your business. Every day it brings you one thing that moves the business forward, already made, so you just say yes.';
 async function aeo(browser, base) {
   for (const v of VARIANTS) {
     const { ctx, p } = await page(browser, base, v, 390);

@@ -159,7 +159,7 @@
       // and the href stays the https WhatsApp link.
       a.href = inapp ? APPS.whatsapp.href : APPS[k].href; a.dataset.app = k; a.setAttribute('data-text-cta', k);
       a.target = k === 'whatsapp' ? '_blank' : ''; a.rel = 'noopener';
-      a.innerHTML = WHITE[k] + '<span>Get my first growth test</span>';
+      a.innerHTML = WHITE[k] + '<span>Text Grow</span>';
       box.querySelectorAll('[data-pick]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.pick === k)); });
     }
     box.querySelectorAll('[data-pick]').forEach(function (b) { b.onclick = function () { pick(b.dataset.pick); }; });
