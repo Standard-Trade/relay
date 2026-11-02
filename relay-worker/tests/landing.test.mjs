@@ -9,6 +9,8 @@
 // 3. Answer engines: each hero has a visible FAQ that fits at phone widths, a
 //    meta description, and JSON-LD that parses and matches the visible FAQ;
 //    robots.txt, sitemap.xml and the IndexNow key file are served.
+// 4. Meta pixel: a "Text Grow" tap sends Lead from the browser and the
+//    server copy by beacon, with one event id.
 //
 // Usage: node tests/landing.test.mjs [--shots <dir>]
 import { chromium } from 'playwright';
@@ -361,6 +363,43 @@ async function library(browser, base) {
   await ctx.close();
 }
 
+// Meta pixel: with the Worker's meta tag in the page, a "Text Grow" tap fires
+// Lead in the browser and beacons the same event id to /api/meta for the
+// Conversions API copy. Without the tag, nothing loads.
+async function pixel(browser, base) {
+  for (const variant of VARIANTS) {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: UA.safari });
+    const beacons = [];
+    await ctx.route('**/*', async r => {
+      const u = r.request().url();
+      if (u.startsWith(`${base}/api/meta`)) { beacons.push(r.request().postData()); return r.fulfill({ status: 204 }); }
+      if (u === `${base}/h/${variant}`) {
+        const res = await r.fetch();
+        return r.fulfill({ response: res, body: (await res.text()).replace('<!--POSTHOG-->', '<meta name="meta-pixel" content="1819451502605952">') });
+      }
+      // fbevents.js stays offline; the queue stub records the calls.
+      return u.startsWith(base) ? r.continue() : r.abort();
+    });
+    await ctx.addInitScript(() => { window.sgNavigate = () => {}; });
+    const p = await ctx.newPage();
+    await p.goto(`${base}/h/${variant}`, { waitUntil: 'load' });
+    const queued = () => p.evaluate(() => (window.fbq && window.fbq.queue || []).map(a => [...a]));
+    const q0 = await queued();
+    check(q0.some(a => a[0] === 'init' && a[1] === '1819451502605952'), `[pixel ${variant}] fbq init with the pixel id`);
+    check(q0.some(a => a[0] === 'track' && a[1] === 'PageView'), `[pixel ${variant}] PageView`);
+    await p.click('[data-text-cta]');
+    await p.waitForTimeout(300);
+    const lead = (await queued()).find(a => a[0] === 'track' && a[1] === 'Lead');
+    check(!!lead, `[pixel ${variant}] Text Grow tap fires Lead`);
+    const sent = beacons.map(b => { try { return JSON.parse(b); } catch { return {}; } });
+    check(sent.length === 1 && sent[0].event === 'Lead' && lead && sent[0].id === lead[3].eventID, `[pixel ${variant}] beacon carries the same Lead event id (got ${JSON.stringify(sent)})`);
+    await ctx.close();
+  }
+  const { ctx, p } = await page(browser, base, 'a', 390);
+  check(await p.evaluate(() => typeof window.fbq) === 'undefined', '[pixel] no pixel id, no fbq');
+  await ctx.close();
+}
+
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
@@ -369,6 +408,7 @@ try {
   await cta(browser, base);
   await aeo(browser, base);
   await library(browser, base);
+  await pixel(browser, base);
 } finally {
   await browser.close();
   server.close();
@@ -378,4 +418,4 @@ if (failures.length) {
   failures.forEach(f => console.error('  ✗ ' + f));
   process.exit(1);
 }
-console.log(`PASS landing: ${checks} checks (variants ${VARIANTS.join('/')}, widths ${WIDTHS.join('/')}, CTA x6 user agents, FAQ/meta/JSON-LD, robots/sitemap/IndexNow, experiment library)`);
+console.log(`PASS landing: ${checks} checks (variants ${VARIANTS.join('/')}, widths ${WIDTHS.join('/')}, CTA x6 user agents, FAQ/meta/JSON-LD, robots/sitemap/IndexNow, experiment library, Meta pixel)`);

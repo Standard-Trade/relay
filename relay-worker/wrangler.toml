@@ -22,6 +22,10 @@ POSTHOG_HOST = "https://us.i.posthog.com"
 # Where "Text me" referral codes go: Standard Grow's gateway. Off until the
 # GROW_TEXTME_TOKEN secret is set here and the same value on the gateway.
 GROW_TEXTME_HOOK = "https://rust-personal-agent-staging.onrender.com/webhooks/textme"
+# Meta pixel (public; the page loads it). The Conversions API copy also
+# needs the META_CAPI_TOKEN secret. META_TEST_CODE, when set, sends the server
+# events to Events Manager's Test events tab instead of counting them.
+META_PIXEL_ID = "1819451502605952"
 
 # A Worker route on the existing proxied hostname: the Worker answers before
 # the request would reach any origin, so the Mac tunnel is no longer used.

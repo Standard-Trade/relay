@@ -111,12 +111,14 @@
       var msg = tf.querySelector('.send-textme-msg'), btn = tf.querySelector('button'), phone = tf.phone.value.trim();
       if (phone.replace(/\D/g, '').length < 10) { msg.textContent = 'Enter a phone number with area code.'; tf.phone.focus(); return; }
       btn.disabled = true; msg.textContent = '';
+      var metaId = window.sgMetaId ? window.sgMetaId() : '';
       fetch('/api/textme', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone, company: tf.company.value, src: (window.sgSource || 'direct') + '|' + (document.documentElement.dataset.variant || ''), inapp: inapp, ref: REF,
+        body: JSON.stringify({ phone: phone, company: tf.company.value, src: (window.sgSource || 'direct') + '|' + (document.documentElement.dataset.variant || ''), inapp: inapp, ref: REF, meta_id: metaId,
           ph: window.posthog && typeof window.posthog.get_distinct_id === 'function' ? window.posthog.get_distinct_id() : '' }) })
         .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn\u2019t go through. Try again.'); }); })
         .then(function () {
           if (window.sgTrack) window.sgTrack('textme_submitted', { inapp: inapp });
+          if (window.sgMeta) window.sgMeta('Lead', metaId);
           tf.innerHTML = '<p class="send-textme-ok">Got it. We\u2019ll text you shortly.</p>';
         }, function (err) { msg.textContent = err.message; btn.disabled = false; });
     };
