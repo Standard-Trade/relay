@@ -16,8 +16,8 @@
   document.addEventListener('click', function (e) {
     if (!e.target.closest || !e.target.closest('[data-text-cta]')) return;
     var id = newId();
-    window.sgMeta('Lead', id);
-    var body = JSON.stringify({ event: 'Lead', id: id, url: location.href });
+    window.sgMeta('CompleteRegistration', id);
+    var body = JSON.stringify({ event: 'CompleteRegistration', id: id, url: location.href });
     if (navigator.sendBeacon) navigator.sendBeacon('/api/meta', new Blob([body], { type: 'application/json' }));
     else fetch('/api/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true });
   });

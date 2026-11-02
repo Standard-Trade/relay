@@ -1331,17 +1331,18 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
     }
 
     // Public: the server copy of a pixel event the page can't wait on, like the
-    // "Text Grow" tap that leaves for Messages. Only Lead; the page sends it
-    // by beacon with the pixel's event id.
+    // "Text Grow" tap that leaves for Messages. Only CompleteRegistration, the
+    // sign-up (a Sales campaign can optimize for it; Lead needs the Leads
+    // objective). The page sends it by beacon with the pixel's event id.
     if path == "/api/meta" && req.method() == Method::Post {
         let v: Value = req.json().await.unwrap_or(Value::Null);
         let id = v["id"].as_str().unwrap_or("");
-        if v["event"].as_str() != Some("Lead") || !meta_id_ok(id) {
+        if v["event"].as_str() != Some("CompleteRegistration") || !meta_id_ok(id) {
             return err("bad event", 400);
         }
         let page = v["url"].as_str().filter(|u| u.starts_with(&c.public_url) && u.len() <= 2000).unwrap_or(&c.public_url).to_string();
         let t = now();
-        meta_send(&c, meta_event("Lead", id, t, &page, &meta_visit(&req, &page, t), None, None)).await;
+        meta_send(&c, meta_event("CompleteRegistration", id, t, &page, &meta_visit(&req, &page, t), None, None)).await;
         return Ok(Response::empty()?.with_status(204));
     }
 
@@ -1385,7 +1386,7 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
             ph_send(&c, vec![ph_event("waitlist_joined", &id, t, props)]).await;
             if let Some(mid) = v["meta_id"].as_str().filter(|m| meta_id_ok(m)) {
                 let page = req.headers().get("Referer")?.filter(|u| u.starts_with(&c.public_url)).unwrap_or_else(|| c.public_url.clone());
-                meta_send(&c, meta_event("Lead", mid, t, &page, &meta_visit(&req, &page, t), Some(&email), None)).await;
+                meta_send(&c, meta_event("CompleteRegistration", mid, t, &page, &meta_visit(&req, &page, t), Some(&email), None)).await;
             }
         }
         c.db
@@ -1440,7 +1441,7 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
             ph_send(&c, vec![ph_event("textme_submitted", &id, t, props)]).await;
             if let Some(mid) = v["meta_id"].as_str().filter(|m| meta_id_ok(m)) {
                 let page = req.headers().get("Referer")?.filter(|u| u.starts_with(&c.public_url)).unwrap_or_else(|| c.public_url.clone());
-                meta_send(&c, meta_event("Lead", mid, t, &page, &meta_visit(&req, &page, t), None, Some(&phone))).await;
+                meta_send(&c, meta_event("CompleteRegistration", mid, t, &page, &meta_visit(&req, &page, t), None, Some(&phone))).await;
             }
         }
         // A number asked once without a code keeps its row; a later request
@@ -2015,7 +2016,7 @@ mod tests {
 
     #[test]
     fn meta_event_hashes_email_and_phone_the_way_meta_asks() {
-        let e = meta_event("Lead", "e1abcdefgh", 1_700_000_000, "https://grow.standardtrade.ai/?src=meta", &visit(None), Some("  Owner@Shop.com "), None);
+        let e = meta_event("CompleteRegistration", "e1abcdefgh", 1_700_000_000, "https://grow.standardtrade.ai/?src=meta", &visit(None), Some("  Owner@Shop.com "), None);
         // sha256("owner@shop.com")
         assert_eq!(e["user_data"]["em"][0], sha256_hex("owner@shop.com"));
         assert_eq!(e["user_data"]["em"][0].as_str().unwrap().len(), 64);
@@ -2025,7 +2026,7 @@ mod tests {
         assert_eq!(e["action_source"], "website");
         assert_eq!(e["user_data"]["fbp"], "fb.1.1700000000000.123");
 
-        let p = meta_event("Lead", "e1abcdefgh", 1_700_000_000, "https://grow.standardtrade.ai/", &visit(Some("fb.1.1.abc")), None, Some("+1 (415) 555-0134"));
+        let p = meta_event("CompleteRegistration", "e1abcdefgh", 1_700_000_000, "https://grow.standardtrade.ai/", &visit(Some("fb.1.1.abc")), None, Some("+1 (415) 555-0134"));
         assert_eq!(p["user_data"]["ph"][0], sha256_hex("14155550134"));
         assert_eq!(p["user_data"]["fbc"], "fb.1.1.abc");
         assert!(p["user_data"].get("em").is_none());

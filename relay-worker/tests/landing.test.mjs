@@ -9,7 +9,7 @@
 // 3. Answer engines: each hero has a visible FAQ that fits at phone widths, a
 //    meta description, and JSON-LD that parses and matches the visible FAQ;
 //    robots.txt, sitemap.xml and the IndexNow key file are served.
-// 4. Meta pixel: a "Text Grow" tap sends Lead from the browser and the
+// 4. Meta pixel: a "Text Grow" tap sends CompleteRegistration from the browser and the
 //    server copy by beacon, with one event id.
 //
 // Usage: node tests/landing.test.mjs [--shots <dir>]
@@ -364,7 +364,7 @@ async function library(browser, base) {
 }
 
 // Meta pixel: with the Worker's meta tag in the page, a "Text Grow" tap fires
-// Lead in the browser and beacons the same event id to /api/meta for the
+// CompleteRegistration in the browser and beacons the same event id to /api/meta for the
 // Conversions API copy. Without the tag, nothing loads.
 async function pixel(browser, base) {
   for (const variant of VARIANTS) {
@@ -389,10 +389,10 @@ async function pixel(browser, base) {
     check(q0.some(a => a[0] === 'track' && a[1] === 'PageView'), `[pixel ${variant}] PageView`);
     await p.click('[data-text-cta]');
     await p.waitForTimeout(300);
-    const lead = (await queued()).find(a => a[0] === 'track' && a[1] === 'Lead');
-    check(!!lead, `[pixel ${variant}] Text Grow tap fires Lead`);
+    const lead = (await queued()).find(a => a[0] === 'track' && a[1] === 'CompleteRegistration');
+    check(!!lead, `[pixel ${variant}] Text Grow tap fires CompleteRegistration`);
     const sent = beacons.map(b => { try { return JSON.parse(b); } catch { return {}; } });
-    check(sent.length === 1 && sent[0].event === 'Lead' && lead && sent[0].id === lead[3].eventID, `[pixel ${variant}] beacon carries the same Lead event id (got ${JSON.stringify(sent)})`);
+    check(sent.length === 1 && sent[0].event === 'CompleteRegistration' && lead && sent[0].id === lead[3].eventID, `[pixel ${variant}] beacon carries the same CompleteRegistration event id (got ${JSON.stringify(sent)})`);
     await ctx.close();
   }
   const { ctx, p } = await page(browser, base, 'a', 390);

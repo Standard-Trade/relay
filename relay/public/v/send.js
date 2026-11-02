@@ -118,7 +118,7 @@
         .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn\u2019t go through. Try again.'); }); })
         .then(function () {
           if (window.sgTrack) window.sgTrack('textme_submitted', { inapp: inapp });
-          if (window.sgMeta) window.sgMeta('Lead', metaId);
+          if (window.sgMeta) window.sgMeta('CompleteRegistration', metaId);
           tf.innerHTML = '<p class="send-textme-ok">Got it. We\u2019ll text you shortly.</p>';
         }, function (err) { msg.textContent = err.message; btn.disabled = false; });
     };

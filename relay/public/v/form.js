@@ -18,7 +18,7 @@ document.querySelectorAll('form[data-variant]').forEach((f) => {
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'That didn\'t go through. Try again.');
       if (window.sgTrack) window.sgTrack('waitlist_signup', { source: src });
-      if (window.sgMeta) window.sgMeta('Lead', metaId);
+      if (window.sgMeta) window.sgMeta('CompleteRegistration', metaId);
       f.hidden = true; const ok = scope.querySelector('.ok'); ok.hidden = false; if (window.sgFollowup) window.sgFollowup(ok, email);
     } catch (e2) { err.textContent = e2.message; btn.disabled = false; btn.textContent = btn.dataset.label; }
   });
