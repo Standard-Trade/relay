@@ -600,6 +600,88 @@ struct Ctx {
     posthog: Option<(String, String)>,
     /// Standard Grow's referral hook and its bearer token, both required.
     grow_hook: Option<(String, String)>,
+    /// Meta pixel id and Conversions API token, both required, plus the
+    /// optional test code that sends events to Events Manager's Test events.
+    meta: Option<(String, String)>,
+    meta_test: Option<String>,
+}
+
+// ---------------------------------------------------------------- Meta
+
+/// The Conversions API: the server copy of each pixel event, so Meta still
+/// counts a sign-up when the browser blocks the pixel. The browser and the
+/// server send the same event id, and Meta keeps one of the two.
+const META_API: &str = "https://graph.facebook.com/v24.0";
+
+/// The visitor as Meta matches them: IP, browser, and Meta's own cookies.
+struct MetaVisit {
+    ip: String,
+    ua: String,
+    fbp: Option<String>,
+    fbc: Option<String>,
+}
+
+fn meta_visit(req: &Request, page_url: &str, t: i64) -> MetaVisit {
+    let hdr = |k: &str| req.headers().get(k).ok().flatten().unwrap_or_default();
+    MetaVisit { ip: hdr("CF-Connecting-IP"), ua: hdr("User-Agent"), fbp: cookie(req, "_fbp"), fbc: fbc_of(cookie(req, "_fbc"), page_url, t) }
+}
+
+/// The ad click. The pixel keeps it in _fbc; before the pixel has run (or
+/// when it is blocked), the fbclid on the page address is the same click.
+fn fbc_of(cookie: Option<String>, page_url: &str, t: i64) -> Option<String> {
+    cookie.or_else(|| {
+        let u = Url::parse(page_url).ok()?;
+        let f = u.query_pairs().find(|(k, _)| k == "fbclid")?.1.into_owned();
+        (!f.is_empty()).then(|| format!("fb.1.{}.{f}", t * 1000))
+    })
+}
+
+fn sha256_hex(s: &str) -> String {
+    use sha2::{Digest, Sha256};
+    hex(&Sha256::digest(s.as_bytes()))
+}
+
+/// One Conversions API event. Email and phone are hashed here, as Meta
+/// requires: email trimmed and lowercased, phone as digits with the country code.
+fn meta_event(name: &str, id: &str, t: i64, url: &str, v: &MetaVisit, email: Option<&str>, phone: Option<&str>) -> Value {
+    let mut user = json!({ "client_ip_address": v.ip, "client_user_agent": v.ua });
+    if let Some(fbp) = &v.fbp {
+        user["fbp"] = json!(fbp);
+    }
+    if let Some(fbc) = &v.fbc {
+        user["fbc"] = json!(fbc);
+    }
+    if let Some(e) = email {
+        user["em"] = json!([sha256_hex(&e.trim().to_lowercase())]);
+    }
+    if let Some(p) = phone {
+        user["ph"] = json!([sha256_hex(&p.chars().filter(char::is_ascii_digit).collect::<String>())]);
+    }
+    json!({ "event_name": name, "event_time": t, "event_id": id, "action_source": "website", "event_source_url": url, "user_data": user })
+}
+
+fn pixel_ok(id: &str) -> bool {
+    (10..=20).contains(&id.len()) && id.chars().all(|ch| ch.is_ascii_digit())
+}
+
+/// An event id from the page: the pixel made it, so it is short and plain.
+fn meta_id_ok(id: &str) -> bool {
+    (8..=64).contains(&id.len()) && id.chars().all(|ch| ch.is_ascii_alphanumeric() || "-_".contains(ch))
+}
+
+/// Send one event to Meta. Best effort, like PostHog.
+async fn meta_send(c: &Ctx, event: Value) {
+    let Some((pixel, token)) = &c.meta else { return };
+    let mut body = json!({ "data": [event] });
+    if let Some(code) = &c.meta_test {
+        body["test_event_code"] = json!(code);
+    }
+    let url = format!("{META_API}/{pixel}/events?access_token={}", enc(token));
+    match http(Method::Post, &url, &[("Content-Type", "application/json")], Some(body.to_string())).await {
+        Ok(r) if r.status < 300 => {}
+        Ok(r) => console_error!("meta: HTTP {}: {}", r.status, r.text),
+        Err(e) => console_error!("meta: {e}"),
+    }
 }
 
 /// An event for PostHog. Relay's events have no person profile; the
@@ -662,6 +744,11 @@ async fn ctx(env: &Env) -> Result<Ctx> {
             (Ok(u), Ok(k)) if u.to_string().starts_with("https://") && k.to_string().len() >= 32 => Some((u.to_string(), k.to_string())),
             _ => None,
         },
+        meta: match (env.var("META_PIXEL_ID"), env.secret("META_CAPI_TOKEN")) {
+            (Ok(p), Ok(k)) if pixel_ok(&p.to_string()) && !k.to_string().is_empty() => Some((p.to_string(), k.to_string())),
+            _ => None,
+        },
+        meta_test: env.var("META_TEST_CODE").map(|v| v.to_string()).ok().filter(|v| !v.is_empty()),
     })
 }
 
@@ -1200,16 +1287,24 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
         });
         let asset = format!("{}://{}/h/{variant}", url.scheme(), url.host_str().unwrap_or(""));
         let mut page = env.assets("ASSETS")?.fetch(asset, None).await?;
-        let mut html = page.text().await?;
+        let html = page.text().await?;
+        let mut tags = String::new();
         if let Ok(key) = env.var("POSTHOG_KEY").map(|v| v.to_string()) {
             if !key.is_empty() {
                 let host = env.var("POSTHOG_HOST").map(|v| v.to_string()).unwrap_or_else(|_| "https://us.i.posthog.com".into());
                 let safe = |s: &str| s.chars().all(|c| c.is_ascii_alphanumeric() || "_-.:/".contains(c));
                 if safe(&key) && safe(&host) {
-                    html = html.replace("<!--POSTHOG-->", &format!("<meta name=\"posthog-key\" content=\"{key}\"><meta name=\"posthog-host\" content=\"{host}\">"));
+                    tags += &format!("<meta name=\"posthog-key\" content=\"{key}\"><meta name=\"posthog-host\" content=\"{host}\">");
                 }
             }
         }
+        // The pixel runs whenever its id is set; the server copy also needs the token.
+        if let Ok(pixel) = env.var("META_PIXEL_ID").map(|v| v.to_string()) {
+            if pixel_ok(&pixel) {
+                tags += &format!("<meta name=\"meta-pixel\" content=\"{pixel}\">");
+            }
+        }
+        let html = html.replace("<!--POSTHOG-->", &tags);
         let mut r = Response::from_html(html)?;
         r.headers_mut().set("Cache-Control", "no-store")?;
         if forced.is_none() && from_cookie.is_none() {
@@ -1233,6 +1328,22 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
             }
             None => Response::error("not found", 404),
         };
+    }
+
+    // Public: the server copy of a pixel event the page can't wait on, like the
+    // "Text Grow" tap that leaves for Messages. Only CompleteRegistration, the
+    // sign-up (a Sales campaign can optimize for it; Lead needs the Leads
+    // objective). The page sends it by beacon with the pixel's event id.
+    if path == "/api/meta" && req.method() == Method::Post {
+        let v: Value = req.json().await.unwrap_or(Value::Null);
+        let id = v["id"].as_str().unwrap_or("");
+        if v["event"].as_str() != Some("CompleteRegistration") || !meta_id_ok(id) {
+            return err("bad event", 400);
+        }
+        let page = v["url"].as_str().filter(|u| u.starts_with(&c.public_url) && u.len() <= 2000).unwrap_or(&c.public_url).to_string();
+        let t = now();
+        meta_send(&c, meta_event("CompleteRegistration", id, t, &page, &meta_visit(&req, &page, t), None, None)).await;
+        return Ok(Response::empty()?.with_status(204));
     }
 
     // Public: waitlist sign-up from the landing page.
@@ -1273,6 +1384,10 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
             };
             let props = json!({ "source": if source.is_empty() { "direct" } else { source }, "hero_variant": variant, "has_site": !v["site"].as_str().unwrap_or("").trim().is_empty() });
             ph_send(&c, vec![ph_event("waitlist_joined", &id, t, props)]).await;
+            if let Some(mid) = v["meta_id"].as_str().filter(|m| meta_id_ok(m)) {
+                let page = req.headers().get("Referer")?.filter(|u| u.starts_with(&c.public_url)).unwrap_or_else(|| c.public_url.clone());
+                meta_send(&c, meta_event("CompleteRegistration", mid, t, &page, &meta_visit(&req, &page, t), Some(&email), None)).await;
+            }
         }
         c.db
             .run(
@@ -1324,6 +1439,10 @@ pub async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response
             };
             let props = json!({ "source": if source.is_empty() { "direct" } else { source }, "hero_variant": variant, "inapp": inapp, "referred": referral.is_some() });
             ph_send(&c, vec![ph_event("textme_submitted", &id, t, props)]).await;
+            if let Some(mid) = v["meta_id"].as_str().filter(|m| meta_id_ok(m)) {
+                let page = req.headers().get("Referer")?.filter(|u| u.starts_with(&c.public_url)).unwrap_or_else(|| c.public_url.clone());
+                meta_send(&c, meta_event("CompleteRegistration", mid, t, &page, &meta_visit(&req, &page, t), None, Some(&phone))).await;
+            }
         }
         // A number asked once without a code keeps its row; a later request
         // from a referral link adds the code if it has none yet.
@@ -1890,6 +2009,52 @@ async fn import(c: &Ctx, env: &Env, v: &Value) -> std::result::Result<Value, Str
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn visit(fbc: Option<&str>) -> MetaVisit {
+        MetaVisit { ip: "203.0.113.7".into(), ua: "Mozilla/5.0".into(), fbp: Some("fb.1.1700000000000.123".into()), fbc: fbc.map(String::from) }
+    }
+
+    #[test]
+    fn meta_event_hashes_email_and_phone_the_way_meta_asks() {
+        let e = meta_event("CompleteRegistration", "e1abcdefgh", 1_700_000_000, "https://grow.standardtrade.ai/?src=meta", &visit(None), Some("  Owner@Shop.com "), None);
+        // sha256("owner@shop.com")
+        assert_eq!(e["user_data"]["em"][0], sha256_hex("owner@shop.com"));
+        assert_eq!(e["user_data"]["em"][0].as_str().unwrap().len(), 64);
+        assert!(e["user_data"].get("ph").is_none());
+        assert!(e["user_data"].get("fbc").is_none());
+        assert_eq!(e["event_id"], "e1abcdefgh");
+        assert_eq!(e["action_source"], "website");
+        assert_eq!(e["user_data"]["fbp"], "fb.1.1700000000000.123");
+
+        let p = meta_event("CompleteRegistration", "e1abcdefgh", 1_700_000_000, "https://grow.standardtrade.ai/", &visit(Some("fb.1.1.abc")), None, Some("+1 (415) 555-0134"));
+        assert_eq!(p["user_data"]["ph"][0], sha256_hex("14155550134"));
+        assert_eq!(p["user_data"]["fbc"], "fb.1.1.abc");
+        assert!(p["user_data"].get("em").is_none());
+    }
+
+    #[test]
+    fn fbc_comes_from_the_cookie_or_the_ad_click() {
+        assert_eq!(fbc_of(Some("fb.1.5.zz".into()), "https://grow.standardtrade.ai/?fbclid=abc", 9).as_deref(), Some("fb.1.5.zz"));
+        assert_eq!(fbc_of(None, "https://grow.standardtrade.ai/?src=meta&fbclid=IwAR0x", 1_700_000_000).as_deref(), Some("fb.1.1700000000000.IwAR0x"));
+        assert_eq!(fbc_of(None, "https://grow.standardtrade.ai/?fbclid=", 1), None);
+        assert_eq!(fbc_of(None, "https://grow.standardtrade.ai/", 1), None);
+    }
+
+    #[test]
+    fn sha256_hex_is_plain_sha256() {
+        assert_eq!(sha256_hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    }
+
+    #[test]
+    fn meta_ids_and_pixel_ids_are_checked() {
+        assert!(meta_id_ok("e1lq3k9x2abc"));
+        assert!(!meta_id_ok("short"));
+        assert!(!meta_id_ok("has space in it"));
+        assert!(!meta_id_ok(&"x".repeat(65)));
+        assert!(pixel_ok("1234567890123456"));
+        assert!(!pixel_ok(""));
+        assert!(!pixel_ok("12345abc90"));
+    }
 
     #[test]
     fn grow_person_matches_the_gateway_hash() {
