@@ -3,9 +3,9 @@
 // WhatsApp; the switch flips it. Email stays as a quiet fallback.
 (function () {
   // iMessage reaches the Photon iMessage line; WhatsApp has its own line
-  // (PHOTON_WHATSAPP_NUMBER on the gateway). The 628 number isn't on WhatsApp.
+  // (PHOTON_WHATSAPP_NUMBER on the gateway), +1 628-688-9212.
   var IMESSAGE_NUM = '16287261402';
-  var WHATSAPP_NUM = '15557238722';
+  var WHATSAPP_NUM = '16286889212';
   // A referral link (?ref=rf_<12 hex>) carries its code into the first
   // text, which is where Standard Grow reads it. Anything else is dropped.
   // "Text me" sends the same code with the phone number.
