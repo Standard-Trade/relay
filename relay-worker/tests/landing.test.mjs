@@ -135,7 +135,7 @@ async function cta(browser, base) {
   // [user agent, expected href, in-app browser, app picked by default, expected escape link]
   const cases = [
     ['safari', /^sms:\+16287261402&/, false, 'imessage'],
-    ['chromeAndroid', /^https:\/\/wa\.me\/15557238722\?/, false, 'whatsapp'],
+    ['chromeAndroid', /^https:\/\/wa\.me\/16286889212\?/, false, 'whatsapp'],
     ['tiktokIos', /^https:\/\//, true, 'imessage', /^x-safari-https:\/\/[^#]*[?&]go=/],
     ['tiktokAndroid', /^https:\/\//, true, 'whatsapp', /^intent:\/\/[^#]*[?&]go=[^#]*#Intent;scheme=https;package=com\.android\.chrome;S\.browser_fallback_url=[^;]+;end$/],
     ['instagram', /^https:\/\//, true, 'imessage', /^instagram:\/\/extbrowser\/\?url=https?%3A%2F%2F.*go%3D/],
@@ -352,7 +352,7 @@ async function library(browser, base) {
     await p.tap('.send a.send-go');
     await p.waitForSelector('.send-sheet:not([hidden])', { timeout: 3000 }).catch(() => {});
     const links = await p.$$eval('.send-sheet a', as => as.map(a => decodeURIComponent(a.href)));
-    check(links.some(h => h.startsWith('https://wa.me/15557238722?') && h.includes('(ref rf_0123456789ab)')), `[referral tiktok] sheet WhatsApp link lacks the code: ${links}`);
+    check(links.some(h => h.startsWith('https://wa.me/16286889212?') && h.includes('(ref rf_0123456789ab)')), `[referral tiktok] sheet WhatsApp link lacks the code: ${links}`);
     check(links.some(h => h.includes('ref=rf_0123456789ab')) || links.some(h => h.includes('(ref rf_0123456789ab)')), `[referral tiktok] sheet links drop the code: ${links}`);
     await ctx.close();
   }
