@@ -135,11 +135,11 @@ async function cta(browser, base) {
   // [user agent, expected href, in-app browser, app picked by default, expected escape link]
   const cases = [
     ['safari', /^sms:\+16287261402&/, false, 'imessage'],
-    ['chromeAndroid', /^sms:\+16287261402&/, false, 'imessage'],
-    ['tiktokIos', /^https?:\/\//, true, 'imessage', /^x-safari-https:\/\/[^#]*[?&]go=/],
-    ['tiktokAndroid', /^https?:\/\//, true, 'imessage', /^intent:\/\/[^#]*[?&]go=[^#]*#Intent;scheme=https;package=com\.android\.chrome;S\.browser_fallback_url=[^;]+;end$/],
-    ['instagram', /^https?:\/\//, true, 'imessage', /^instagram:\/\/extbrowser\/\?url=https?%3A%2F%2F.*go%3D/],
-    ['facebook', /^https?:\/\//, true, 'imessage', /^x-safari-https:\/\/[^#]*[?&]go=/],
+    ['chromeAndroid', /^https:\/\/wa\.me\/15557238722\?/, false, 'whatsapp'],
+    ['tiktokIos', /^https:\/\//, true, 'imessage', /^x-safari-https:\/\/[^#]*[?&]go=/],
+    ['tiktokAndroid', /^https:\/\//, true, 'whatsapp', /^intent:\/\/[^#]*[?&]go=[^#]*#Intent;scheme=https;package=com\.android\.chrome;S\.browser_fallback_url=[^;]+;end$/],
+    ['instagram', /^https:\/\//, true, 'imessage', /^instagram:\/\/extbrowser\/\?url=https?%3A%2F%2F.*go%3D/],
+    ['facebook', /^https:\/\//, true, 'imessage', /^x-safari-https:\/\/[^#]*[?&]go=/],
   ];
   const state = () => {
     const a = document.querySelector('.send a.send-go'), sw = document.querySelector('.send-switch');
@@ -153,8 +153,7 @@ async function cta(browser, base) {
     const btns = await p.$$('.send a.send-go');
     check(btns.length === 1, `${where} expected one CTA button, found ${btns.length}`);
     const info = await p.evaluate(state);
-    check(!info.switchShown, `${where} no app switch while WhatsApp is off`);
-    check(!/whatsapp/i.test(info.body), `${where} WhatsApp is mentioned on the page`);
+    check(info.switchShown, `${where} iMessage/WhatsApp switch should be visible`);
     check(info.app === def, `${where} default app is ${info.app}, want ${def}`);
     check(want.test(info.href || ''), `${where} CTA href ${info.href} should match ${want}`);
     check(info.text === 'Text Grow', `${where} CTA label is "${info.text}"`);
@@ -165,10 +164,10 @@ async function cta(browser, base) {
       // Tapping must keep the visitor on the page and offer ways out, never fire sms:.
       const navs = [];
       p.on('framenavigated', f => { if (f === p.mainFrame()) navs.push(f.url()); });
-      for (const app of ['imessage']) {
+      for (const app of ['imessage', 'whatsapp']) {
+        await p.click(`[data-pick="${app}"]`);
         const now = await p.evaluate(state);
-        // A web link (https on the live site; the test server is http), never sms:.
-        check(/^https?:/.test(now.href || ''), `${where} ${app}: in-app CTA href ${now.href} must be a web link`);
+        check(/^https:/.test(now.href || ''), `${where} ${app}: in-app CTA href ${now.href} must be https`);
         await p.evaluate(() => { window.__navs.length = 0; });
         await p.click('.send a.send-go');
         // First the tap tries to hand the page to the real browser...
@@ -187,8 +186,8 @@ async function cta(browser, base) {
         });
         check(!!sheet, `${where} ${app}: tapping the CTA should open the in-app sheet`);
         if (sheet) {
-          check(sheet.first === 'copy', `${where} ${app}: sheet leads with ${sheet.first}`);
-          check(!/whatsapp/i.test(sheet.text), `${where} ${app}: sheet mentions WhatsApp`);
+          check(sheet.first === (app === 'imessage' ? 'copy' : 'whatsapp'), `${where} ${app}: sheet leads with ${sheet.first}`);
+          check(sheet.links.some(h => /^https:\/\/wa\.me\//.test(h) && decodeURIComponent(h).includes('Hey, help me grow my business')), `${where} ${app}: sheet has no prefilled https WhatsApp link`);
           check(sheet.links.every(h => /^https:/.test(h)), `${where} ${app}: sheet links must all be https: ${sheet.links}`);
           check(!/702\D?350\D?8103/.test(sheet.text), `${where} ${app}: phone number is visible in the sheet`);
         }
@@ -209,7 +208,7 @@ async function cta(browser, base) {
   }
   // Landing in the real browser from an in-app escape (?go=<app>).
   for (const v of VARIANTS) {
-    for (const [ua, app, firesSms] of [['safari', 'imessage', true], ['chromeAndroid', 'imessage', true]]) {
+    for (const [ua, app, firesSms] of [['safari', 'imessage', true], ['safari', 'whatsapp', false], ['chromeAndroid', 'imessage', true]]) {
       const { ctx, p } = await page(browser, base, v, 390, UA[ua], `?go=${app}&src=tiktok-test`);
       const where = `[h/${v} ${ua} ?go=${app}]`;
       await p.waitForTimeout(500);
@@ -352,9 +351,9 @@ async function library(browser, base) {
     const { ctx, p } = await page(browser, base, 'a', 390, UA.tiktokIos, '?ref=rf_0123456789ab');
     await p.tap('.send a.send-go');
     await p.waitForSelector('.send-sheet:not([hidden])', { timeout: 3000 }).catch(() => {});
-    // The escape link (CTA href) keeps ?ref=, so the code reaches the first text in the real browser.
-    const href = await p.getAttribute('.send a.send-go', 'href') || '';
-    check(href.includes('ref=rf_0123456789ab'), `[referral tiktok] CTA escape link drops the code: ${href}`);
+    const links = await p.$$eval('.send-sheet a', as => as.map(a => decodeURIComponent(a.href)));
+    check(links.some(h => h.startsWith('https://wa.me/15557238722?') && h.includes('(ref rf_0123456789ab)')), `[referral tiktok] sheet WhatsApp link lacks the code: ${links}`);
+    check(links.some(h => h.includes('ref=rf_0123456789ab')) || links.some(h => h.includes('(ref rf_0123456789ab)')), `[referral tiktok] sheet links drop the code: ${links}`);
     await ctx.close();
   }
   // AI attribution: ChatGPT's utm_source reaches ph.js on the hero.
