@@ -295,6 +295,11 @@ const LIBRARY = ['/experiments', '/experiments/faceless-tiktok-slideshows', '/le
 async function library(browser, base) {
   const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
   const llms = fs.readFileSync(path.join(ROOT, 'llms.txt'), 'utf8');
+  // Every experiment on the ledger links to where it's written up and says whether it's still running.
+  const ledger = fs.readFileSync(path.join(ROOT, 'ledger.html'), 'utf8');
+  const rows = [...(ledger.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] || '').matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map(m => m[1]);
+  check(rows.length > 0, '[library /ledger] experiments table is empty');
+  for (const r of rows) check(/<a href="(\/|https:\/\/)[^"]+">/.test(r) && /<td>(Running|Done|Stopped)<\/td>$/.test(r), `[library /ledger] experiment row needs a link and a status: ${r.slice(0, 80)}`);
   for (const u of LIBRARY) {
     check(sitemap.includes(`<loc>https://grow.standardtrade.ai${u}</loc>`), `[library ${u}] missing from sitemap.xml`);
     check(llms.includes(`(https://grow.standardtrade.ai${u})`), `[library ${u}] missing from llms.txt`);
