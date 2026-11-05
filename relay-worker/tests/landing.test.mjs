@@ -283,6 +283,17 @@ async function aeo(browser, base) {
   for (const bot of ['OAI-SearchBot', 'ChatGPT-User', 'GPTBot', 'Bingbot', 'Googlebot']) check(new RegExp(`User-agent: ${bot}\\nAllow: /\\n`).test(robots), `[aeo] robots.txt does not allow ${bot}`);
   const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
   check(!/\/admin|\/tt\//.test(sitemap), '[aeo] sitemap exposes /admin or /tt/');
+  // One story about what Grow is: engines repeat whatever definition they read, so llms.txt, the heroes, terms,
+  // privacy and the what-is page all carry DESC, and none keeps the retired text-a-reel definition.
+  const llms = fs.readFileSync(path.join(ROOT, 'llms.txt'), 'utf8');
+  check(llms.includes(`> ${DESC}`), '[aeo] llms.txt summary is not the canonical description');
+  for (const f of ['h/a.html', 'h/b.html', 'h/c.html', 'terms.html', 'privacy.html', 'what-is-standard-grow.html', 'llms.txt']) {
+    const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    check(!/number you text a reel to/i.test(t), `[aeo] ${f} still defines Grow as "a number you text a reel to"`);
+    if (f.endsWith('.html') && !f.startsWith('h/')) check(t.includes(DESC), `[aeo] ${f} does not carry the canonical description`);
+    const title = t.match(/<title>([^<]*)<\/title>/)?.[1];
+    if (f.startsWith('h/')) check(title && title.length <= 60 && title.startsWith('Standard Grow') && title !== 'Standard Grow', `[aeo] ${f} title should say what Grow is in <= 60 chars: ${title}`);
+  }
 }
 
 // 4. Public experiment library and growth ledger (built by
